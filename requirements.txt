@@ -1,0 +1,8 @@
+gensim
+tensorflow
+keras
+jupyter
+pandas
+nltk
+lxml
+pymystem3
