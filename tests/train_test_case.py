@@ -8,10 +8,16 @@ from sklearn.model_selection import train_test_split
 from pymongo import MongoClient
 from sklearn.externals import joblib
 from sklearn.preprocessing import quantile_transform
+import os
 
 class TrainTestCase(unittest.TestCase):
-  def create_raw_events_dataframe(self):
-    return pd.read_csv("./tests/raw_events.csv")
+  def create_raw_events_dataframe(self, user_id=1):
+    raw_events = pd.read_csv("./tests/raw_events.csv")
+    raw_events["user_id"] = user_id
+    return raw_events
+
+  def create_big_raw_events_dataframe(self):
+    return pd.concat([self.create_raw_events_dataframe(user_id=i) for i in range(10)])
 
   def create_user_events_dataframe(self):
     return pd.read_csv("./tests/user_events.csv")
@@ -85,12 +91,20 @@ class TrainTestCase(unittest.TestCase):
     self.assertEqual(event["last_tag"], "tag2")
     self.assertEqual(event["topic"], 0)
     self.assertEqual(event["topic_probability"], 0.9)
-    self.assertEqual(event["time_coefficient"], 1)
     self.assertEqual(event["popularity"], 1)
-    self.assertEqual(event["popularity_coefficient"], quantile_transform(event["popularity"].reshape(1, -1)).reshape(-1))
-    self.assertEqual(event["time_coefficient"], quantile_transform(event["time"].reshape(1, -1)).reshape(-1))
+    # Test for popularity and time coefficient
     event = events[events["post_permlink"] == "@author/somelink2"].iloc[0]
     assert event["parent_permlink"] == ""
+
+  def test_extend_events_with_nan(self):
+    raw_events = self.create_raw_events_dataframe()
+    user_events = ffm.get_user_events(raw_events)
+    posts = self.create_posts_dataframe()
+    events = ffm.get_events(user_events)
+    ffm.extend_events(events, posts)
+    event = events[events["post_permlink"] == "@author/somelink2"].iloc[0]
+    self.assertEqual(event["topic"], 0)
+    self.assertEqual(event["topic_probability"], 0)
 
   def test_create_mapping(self):
     uid_to_idx = ffm.create_mapping([10, 20, 12])
@@ -131,15 +145,28 @@ class TrainTestCase(unittest.TestCase):
     assert train_roc_auc == roc_auc_score(train_ffm_data_y, model.predict(train_ffm_data)) 
     assert test_roc_auc == roc_auc_score(test_ffm_data_y, model.predict(test_ffm_data)) 
 
-  def test_save_model(self):
-    events = self.create_big_events_dataframe()
-    mappings, X, y = ffm.create_ffm_dataset(events)
-    ffm_data = ffm_utils.FFMData(X, y)
-    model = ffm_utils.FFM()
-    model.init_model(ffm_data)
-    ffm.save_model(mappings, model)
-    assert joblib.load("mappings.pkl")['uid_to_idx']
-    assert ffm_utils.read_model("model.bin").predict
-
-  def test_main_method(self):
-    pass
+  def test_train(self):
+    client = MongoClient("localhost:27017")
+    db = client["steemdb_test"]
+    db.drop_collection('comment')
+    test_posts = [{
+      "permlink": "somelink1",
+      "author": "author", 
+      "parent_permlink": "somelink",
+      "json_metadata": {
+        "tags": ["tag1", "tag2"]
+      },
+      "depth": 0,
+      "created": pd.Timestamp.now().round('60min'),
+      "topic": 0,
+      "topic_probability": 0.9
+    }]
+    db.comment.insert_many(test_posts)
+    raw_events = self.create_big_raw_events_dataframe()
+    os.remove("model.bin")
+    os.remove("mappings.pkl")
+    ffm.train(raw_events, "localhost:27017", "steemdb_test")
+    model = ffm_utils.read_model('model.bin')
+    mappings = joblib.load('mappings.pkl')
+    assert mappings['uid_to_idx']
+    assert model.predict

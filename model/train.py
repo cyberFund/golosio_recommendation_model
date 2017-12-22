@@ -5,7 +5,9 @@ from pymongo import MongoClient
 import pandas as pd
 import pdb
 from sklearn.externals import joblib
-
+from sklearn.preprocessing import quantile_transform
+from sklearn.model_selection import train_test_split
+import numpy as np
 
 MODEL_PARAMETERS = {
   'eta': 0.1, 
@@ -96,12 +98,13 @@ def extend_events(events, posts):
   events["author"] = events["post_permlink"].apply(lambda x: posts.loc[x]["author"] if x in posts.index else "")
   events["first_tag"] = events["post_permlink"].apply(lambda x: posts.loc[x]["first_tag"] if x in posts.index else "")
   events["last_tag"] = events["post_permlink"].apply(lambda x: posts.loc[x]["last_tag"] if x in posts.index else "")
-  events["topic"] = events["post_permlink"].apply(lambda x: posts.loc[x]["topic"] if x in posts.index else "")
-  events["topic_probability"] = events["post_permlink"].apply(lambda x: posts.loc[x]["topic_probability"] if x in posts.index else "")
+  events["topic"] = events["post_permlink"].apply(lambda x: posts.loc[x]["topic"] if x in posts.index else 0)
+  events["topic_probability"] = events["post_permlink"].apply(lambda x: posts.loc[x]["topic_probability"] if x in posts.index else 0)
   popularity = events.groupby("post_permlink").describe()["like"]["count"]
   events["popularity"] = events["post_permlink"].apply(lambda x: popularity.loc[x])
-  events["popularity_coefficient"] = quantile_transform(events["popularity"])
-  events["time"] = events["post_permlink"].apply(lambda x: posts.loc[x]["created"].value if x in posts.index else "")
+  events["popularity_coefficient"] = quantile_transform(events["popularity"].reshape(-1, 1), output_distribution="normal", copy=True).reshape(-1)
+  events["time"] = events["post_permlink"].apply(lambda x: posts.loc[x]["created"].value if x in posts.index else np.nan)
+  events["time_coefficient"] = quantile_transform(events["time"].fillna(events["time"].median()).reshape(-1, 1), output_distribution="normal", copy=True).reshape(-1)
   return events
 
 def create_mapping(series):
@@ -129,12 +132,12 @@ def create_ffm_dataset(events, mapping=None):
   result = []
   for _, event in events.iterrows():
     result.append([
-      (0, uid_to_idx.get(event["user_id"], max(*uid_to_idx.values()) + 1), 1),
-      (1, pid_to_idx.get(event["post_permlink"], max(*uid_to_idx.values()) + 1), 1),
-      (2, aid_to_idx.get(event["author"], max(*uid_to_idx.values()) + 1), 1),
-      (3, parid_to_idx.get(event["parent_permlink"], max(*uid_to_idx.values()) + 1), 1),
-      (4, ftgid_to_idx.get(event["first_tag"], max(*uid_to_idx.values()) + 1), 1),
-      (5, ltgid_to_idx.get(event["last_tag"], max(*uid_to_idx.values()) + 1), 1),
+      (0, uid_to_idx.get(event["user_id"], max(uid_to_idx.values()) + 1), 1),
+      (1, pid_to_idx.get(event["post_permlink"], max(pid_to_idx.values()) + 1), 1),
+      (2, aid_to_idx.get(event["author"], max(aid_to_idx.values()) + 1), 1),
+      (3, parid_to_idx.get(event["parent_permlink"], max(parid_to_idx.values()) + 1), 1),
+      (4, ftgid_to_idx.get(event["first_tag"], max(ftgid_to_idx.values()) + 1), 1),
+      (5, ltgid_to_idx.get(event["last_tag"], max(ltgid_to_idx.values()) + 1), 1),
       (6, event["topic"], event["topic_probability"]),
       (7, 1, event["time_coefficient"]),
       (8, 1, event["popularity_coefficient"]),
@@ -146,7 +149,7 @@ def create_ffm_dataset(events, mapping=None):
     'parid_to_idx': parid_to_idx,
     'ftgid_to_idx': ftgid_to_idx,
     'ltgid_to_idx': ltgid_to_idx,
-  }, result, events["like"].tolist()
+  }, result, (events["like"] > 0.5).tolist()
 
 def build_model(train_X, train_y, test_X, test_y):
   train_ffm_data = ffm.FFMData(train_X, train_y)
@@ -159,6 +162,15 @@ def build_model(train_X, train_y, test_X, test_y):
     model.iteration(train_ffm_data)
   return model, roc_auc_score(train_y, model.predict(train_ffm_data)), roc_auc_score(test_y, model.predict(test_ffm_data))
 
-def save_model(mappings, model):
-  joblib.dump(mappings, "mappings.pkl")
-  model.save_model("model.bin")
+def train(raw_events, database_url, database):
+  user_events = get_user_events(raw_events)
+  events = get_events(user_events)
+  posts = get_posts(database_url, database)
+  extend_events(events, posts)
+  mappings, X, y = create_ffm_dataset(events)
+  train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
+  model, train_auc_roc, test_auc_roc = build_model(train_X, train_y, test_X, test_y)
+  print(train_auc_roc)
+  print(test_auc_roc)
+  model.save_model("./model.bin")
+  joblib.dump(mappings, "./mappings.pkl")
