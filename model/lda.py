@@ -1,55 +1,43 @@
-from model.train import get_posts
-import re
-from bs4 import BeautifulSoup
-import html
-from markdown import markdown
-from nltk.corpus import stopwords
-from nltk.tokenize import RegexpTokenizer
-from pymystem3 import Mystem
+import pdb
 import numpy as np
 from nltk.probability import FreqDist
-from gensim import corpora
-
-
-stopwords_list = stopwords.words('russian')
-tokenizer = RegexpTokenizer(r'\w+')
-stemmer = Mystem()
+import utils
+import sys
+from pymongo import MongoClient
+import pandas as pd
+from gensim import corpora, models
+import pdb
 
 WORD_LENGTH_QUANTILE = 10
 TEXT_LENGTH_QUANTILE = 66
 HIGH_WORD_FREQUENCY_QUANTILE = 99
 LOW_WORD_FREQUENCY_QUANTILE = 60
+LDA_PARAMETERS = {
+  'workers': 10,
+  'topics': 100,
+  'passes': 5,
+  'eta': 0.25
+}
 
-def remove_usernames(post):
-  return re.sub('@\w+\s', '', post)
-
-def remove_html_tags(post):
-  return BeautifulSoup(post, "lxml").get_text()
-
-def unescape_html_tags(post):
-  return html.unescape(post)
-
-def convert_markdown(post):
-  return markdown(post)
-
-def remove_stopwords(words):
-  return [word for word in words if word not in stopwords_list]
-
-def split_post(post):
-  return tokenizer.tokenize(post)
-
-def lemmatize(words):
-  return [stemmer.lemmatize(word)[0] for word in words]
-
-def prepare_post(post):
-  post = post.lower()
-  post = unescape_html_tags(post)
-  post = convert_markdown(post)
-  post = remove_html_tags(post)
-  post = remove_usernames(post)
-  words = split_post(post)
-  words = remove_stopwords(words)
-  return lemmatize(words)
+def get_posts(url, database):
+  client = MongoClient(url)
+  db = client[database]
+  posts = pd.DataFrame(list(db.comment.find(
+    {
+      'permlink' : {'$exists' : True},
+      'depth': 0,
+    }, {
+      'permlink': 1,
+      'author': 1, 
+      'topic' : 1,
+      'topic_probability' : 1,
+      'parent_permlink': 1,
+      'created': 1,
+      'json_metadata': 1,
+      'body': 1,
+    }
+  )))
+  return utils.preprocess_posts(posts)
 
 def remove_short_words(texts):
   word_lengths = [len(item) for sublist in texts for item in sublist]
@@ -74,7 +62,7 @@ def remove_low_frequent_words(texts):
   return [[word for word in text if dictionary[word] >= low_word_frequency_quantile] for text in texts]
 
 def prepare_posts(posts):
-  posts = [prepare_post(post) for post in posts]
+  posts = [utils.prepare_post(post) for post in posts]
   posts = remove_short_words(posts)
   posts = remove_high_frequent_words(posts)
   posts = remove_low_frequent_words(posts)
@@ -83,3 +71,34 @@ def prepare_posts(posts):
 def create_dictionary(texts):
   dictionary = corpora.Dictionary(texts)
   dictionary.save('golos-corpora.dict')
+  return dictionary
+
+def create_corpus(texts, dictionary):
+  corpus = [dictionary.doc2bow(text) for text in texts]
+  tfidf = models.TfidfModel(corpus, id2word=dictionary, normalize=True)
+  corpora.MmCorpus.serialize('golos-corpora_tfidf.mm', tfidf[corpus])
+  return corpora.MmCorpus('golos-corpora_tfidf.mm')
+
+def train_model(corpus, dictionary):
+  model = models.LdaMulticore(workers=LDA_PARAMETERS['workers'], corpus=corpus, id2word=dictionary, num_topics=LDA_PARAMETERS['topics'], passes=LDA_PARAMETERS['passes'], eta=LDA_PARAMETERS['eta'])
+  return model
+
+def create_model(texts):
+  dictionary = create_dictionary(texts)
+  corpus = create_corpus(texts, dictionary)
+  model = train_model(corpus, dictionary)
+  model.save('golos.lda_model')
+  return model, dictionary
+
+def run_lda(database_url, database_name):
+  print("Get posts...")
+  posts = get_posts(database_url, database_name)
+  print("Prepare posts...")
+  texts = prepare_posts(posts["body"])
+  print("Prepare model...")
+  model, dictionary = create_model(texts)
+  print("Save topics...")
+  utils.save_topics(database_url, database_name, posts, model, dictionary)
+
+if (__name__ == "__main__"):
+  run_lda(sys.argv[1], sys.argv[2])

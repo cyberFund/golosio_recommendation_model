@@ -8,6 +8,8 @@ from sklearn.externals import joblib
 from sklearn.preprocessing import quantile_transform
 from sklearn.model_selection import train_test_split
 import numpy as np
+import utils
+import sys
 
 MODEL_PARAMETERS = {
   'eta': 0.1, 
@@ -26,6 +28,8 @@ def parse_recommendations(urls):
 def get_user_events(raw_events):
   user_events = pd.DataFrame(columns=["user", "recommendations", "views", "votes", "comments"])
   users = raw_events["user_id"].unique()
+  raw_events["refurl"] = raw_events["refurl"].astype(str)
+  raw_events["value"] = raw_events["value"].astype(str)
   recommendations = []
   views = []
   votes = []
@@ -50,7 +54,8 @@ def get_posts(url, database):
   posts = pd.DataFrame(list(db.comment.find(
     {
       'permlink' : {'$exists' : True},
-      'depth': 0
+      'depth': 0,
+      'topic': {'$exists' : True},
     }, {
       'permlink': 1,
       'author': 1, 
@@ -61,10 +66,7 @@ def get_posts(url, database):
       'json_metadata': 1
     }
   )))
-  posts["post_permlink"] = "@" + posts["author"] + "/" + posts["permlink"]
-  posts["first_tag"] = posts["json_metadata"].apply(lambda x: x["tags"][0])
-  posts["last_tag"] = posts["json_metadata"].apply(lambda x: x["tags"][-1])
-  return posts.drop(["permlink", "json_metadata", "_id"], axis=1)
+  return utils.preprocess_posts(posts)
 
 def get_events(user_events):
   events = pd.DataFrame(columns=["user_id"])
@@ -163,14 +165,24 @@ def build_model(train_X, train_y, test_X, test_y):
   return model, roc_auc_score(train_y, model.predict(train_ffm_data)), roc_auc_score(test_y, model.predict(test_ffm_data))
 
 def train(raw_events, database_url, database):
+  print("Prepare user events...")
   user_events = get_user_events(raw_events)
+  print("Prepare events...")
   events = get_events(user_events)
+  print("Prepare posts...")
   posts = get_posts(database_url, database)
+  print("Extend events...")
   extend_events(events, posts)
+  print("Create ffm dataset...")
   mappings, X, y = create_ffm_dataset(events)
   train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
+  print("Build model...")
   model, train_auc_roc, test_auc_roc = build_model(train_X, train_y, test_X, test_y)
   print(train_auc_roc)
   print(test_auc_roc)
   model.save_model("./model.bin")
   joblib.dump(mappings, "./mappings.pkl")
+
+if (__name__ == "__main__"):
+  raw_events = pd.read_csv(sys.argv[1])
+  train(raw_events, sys.argv[2], sys.argv[3])
