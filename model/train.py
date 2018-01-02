@@ -184,5 +184,5 @@ def train(raw_events, database_url, database):
   joblib.dump(mappings, "./mappings.pkl")
 
 if (__name__ == "__main__"):
-  raw_events = pd.read_csv(sys.argv[1])
+  raw_events = pd.read_csv(sys.argv[1], names=["id", "event_type", "value", "user_id", "refurl", "status", "created_at"])
   train(raw_events, sys.argv[2], sys.argv[3])

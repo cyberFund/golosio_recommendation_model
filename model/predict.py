@@ -63,5 +63,5 @@ def predict(events, database_url, database):
   save_recommendations(dataset[["user_id", "post_permlink", "prediction"]], database_url, database)
 
 if (__name__ == "__main__"):
-  raw_events = pd.read_csv(sys.argv[1])
+  raw_events = pd.read_csv(sys.argv[1], names=["id", "event_type", "value", "user_id", "refurl", "status", "created_at"])
   predict(raw_events, sys.argv[2], sys.argv[3])
