@@ -15,7 +15,6 @@ stemmer = Mystem()
 
 def preprocess_posts(posts):
   posts["post_permlink"] = "@" + posts["author"] + "/" + posts["permlink"]
-  # pdb.set_trace()
   posts["first_tag"] = posts["json_metadata"].apply(lambda x: x["tags"][0] if (type(x) is dict and "tags" in x.keys() and len(x["tags"])) else "")
   posts["last_tag"] = posts["json_metadata"].apply(lambda x: x["tags"][-1] if (type(x) is dict and "tags" in x.keys() and len(x["tags"])) else "")
   return posts.drop(["json_metadata", "_id"], axis=1)

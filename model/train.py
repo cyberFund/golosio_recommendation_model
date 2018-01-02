@@ -10,6 +10,8 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import utils
 import sys
+import dask.dataframe as dd
+from tqdm import *
 
 MODEL_PARAMETERS = {
   'eta': 0.1, 
@@ -18,6 +20,7 @@ MODEL_PARAMETERS = {
 }
 
 ITERATIONS = 10
+WORKERS = 13
 
 def parse_refurl(url):
   return "/".join(url.split("/")[4:])
@@ -25,17 +28,22 @@ def parse_refurl(url):
 def parse_recommendations(urls):
   return ["@" + url[1:-1] for url in urls[1:-1].split(",") if len(url) > 0]
 
+def prepare_raw_events(raw_events):
+  raw_events["refurl"] = raw_events["refurl"].astype(str)
+  raw_events["value"] = raw_events["value"].astype(str)
+  raw_events["user_id"].fillna("\\N", inplace=True)
+  return raw_events[raw_events["user_id"].astype(str) != "\\N"]
+
 def get_user_events(raw_events):
   user_events = pd.DataFrame(columns=["user", "recommendations", "views", "votes", "comments"])
   users = raw_events["user_id"].unique()
-  raw_events["refurl"] = raw_events["refurl"].astype(str)
-  raw_events["value"] = raw_events["value"].astype(str)
+  users_raw_events = raw_events.groupby("user_id")
   recommendations = []
   views = []
   votes = []
   comments = []
-  for user in users:
-    user_raw_events = raw_events[raw_events["user_id"] == user]
+  for user in tqdm(users):
+    user_raw_events = users_raw_events.get_group(user)
     user_recommendations = [parse_recommendations(x) for x in user_raw_events[user_raw_events["event_type"] == "PageView"]["value"]]
     recommendations.append(set(item for sublist in user_recommendations for item in sublist))
     views.append(set(parse_refurl(x) for x in user_raw_events["refurl"] if x.count("/") >= 5))
@@ -68,48 +76,54 @@ def get_posts(url, database):
   )))
   return utils.preprocess_posts(posts)
 
+def get_coefficient(user_events, user, post):
+  if user not in user_events.index:
+    return 0
+  user_event = user_events.loc[user]
+  if (post in user_event["comments"]):
+    return 1
+  elif ((post in user_event["views"])):
+    return 0.7
+  elif (post in user_event["recommendations"]):
+    return -1
+  else:
+    return 0
+
 def get_events(user_events):
-  events = pd.DataFrame(columns=["user_id"])
+  events = pd.DataFrame()
   users = []
   posts = []
   likes = []
   user_events = user_events.set_index("user")
-  for user in user_events.index:
+  for user in tqdm(user_events.index):
     user_event = user_events.loc[user]
     event_posts = list(user_event["views"]) + list(user_event["votes"]) + list(user_event["comments"]) + list(user_event["recommendations"])
     for post in set(event_posts):
-      users.append(user)
-      posts.append(post)
-      if (post in user_event["comments"]):
-        likes.append(1)
-      elif ((post in user_event["views"])):
-        likes.append(0.7)
-      elif (post in user_event["recommendations"]):
-        likes.append(-1)
-      else:
-        likes.append(0)
+      if post != "":
+        users.append(user)
+        posts.append(post)
   events["user_id"] = users
   events["post_permlink"] = posts
-  events["like"] = likes
+  distributed_events = dd.from_pandas(events, npartitions=WORKERS)
+  events["like"] = distributed_events.apply(lambda x: get_coefficient(user_events, x["user_id"], x["post_permlink"]), axis=1).compute()
   return events
 
 def extend_events(events, posts):
   posts = posts.set_index("post_permlink")
   posts["created"] = pd.to_datetime(posts["created"])
-  events["parent_permlink"] = events["post_permlink"].apply(lambda x: posts.loc[x]["parent_permlink"] if x in posts.index else "")
-  events["author"] = events["post_permlink"].apply(lambda x: posts.loc[x]["author"] if x in posts.index else "")
-  events["first_tag"] = events["post_permlink"].apply(lambda x: posts.loc[x]["first_tag"] if x in posts.index else "")
-  events["last_tag"] = events["post_permlink"].apply(lambda x: posts.loc[x]["last_tag"] if x in posts.index else "")
-  events["topic"] = events["post_permlink"].apply(lambda x: posts.loc[x]["topic"] if x in posts.index else 0)
-  events["topic_probability"] = events["post_permlink"].apply(lambda x: posts.loc[x]["topic_probability"] if x in posts.index else 0)
-  popularity = events.groupby("post_permlink").describe()["like"]["count"]
-  events["popularity"] = events["post_permlink"].apply(lambda x: popularity.loc[x])
-  events["popularity_coefficient"] = quantile_transform(events["popularity"].reshape(-1, 1), output_distribution="normal", copy=True).reshape(-1)
-  events["time"] = events["post_permlink"].apply(lambda x: posts.loc[x]["created"].value if x in posts.index else np.nan)
-  events["time_coefficient"] = quantile_transform(events["time"].fillna(events["time"].median()).reshape(-1, 1), output_distribution="normal", copy=True).reshape(-1)
+  events = events.set_index("post_permlink")
+  popularity = events.groupby("post_permlink").count()
+  popularity["popularity"] = popularity["like"]
+  events = events.join(posts).join(popularity[["popularity"]]).reset_index()
+  events["topic"] = events["topic"].fillna(0).astype(int)
+  events["topic_probability"] = events["topic_probability"].fillna(0)
+  events["popularity_coefficient"] = quantile_transform(events["popularity"].values.reshape(-1, 1), output_distribution="normal", copy=True).reshape(-1)
+  events["time"] = events["created"].apply(lambda x: x.value)
+  events["time_coefficient"] = quantile_transform(events["time"].fillna(events["time"].median()).values.reshape(-1, 1), output_distribution="normal", copy=True).reshape(-1)
   return events
 
 def create_mapping(series):
+  series = series.fillna("")
   mapping = {}
   for (idx, mid) in enumerate(np.unique(series)):
     mapping[mid] = idx
@@ -132,7 +146,8 @@ def create_ffm_dataset(events, mapping=None):
     ltgid_to_idx = mapping["ltgid_to_idx"]
 
   result = []
-  for _, event in events.iterrows():
+  for index in tqdm(events.index):
+    event = events.loc[index]
     result.append([
       (0, uid_to_idx.get(event["user_id"], max(uid_to_idx.values()) + 1), 1),
       (1, pid_to_idx.get(event["post_permlink"], max(pid_to_idx.values()) + 1), 1),
@@ -165,14 +180,36 @@ def build_model(train_X, train_y, test_X, test_y):
   return model, roc_auc_score(train_y, model.predict(train_ffm_data)), roc_auc_score(test_y, model.predict(test_ffm_data))
 
 def train(raw_events, database_url, database):
+  print("Prepare raw events...")
+  raw_events = prepare_raw_events(raw_events)
   print("Prepare user events...")
   user_events = get_user_events(raw_events)
+
+  # user_events.to_csv("user_events.csv")
+  # user_events = pd.read_csv("user_events.csv")
+  # user_events.recommendations = user_events.recommendations.apply(lambda x: eval(x))
+  # user_events.views = user_events.views.apply(lambda x: eval(x))
+  # user_events.votes = user_events.votes.apply(lambda x: eval(x))
+  # user_events.comments = user_events.comments.apply(lambda x: eval(x))
+
   print("Prepare events...")
   events = get_events(user_events)
+
+  # events.to_csv("prepared_events.csv")
+  # events = pd.read_csv("prepared_events.csv").drop(["Unnamed: 0"], axis=1)
+
   print("Prepare posts...")
   posts = get_posts(database_url, database)
+
+  # posts.to_csv("prepared_posts.csv")
+  # posts = pd.read_csv("prepared_posts.csv").drop(["Unnamed: 0"], axis=1)
+
   print("Extend events...")
-  extend_events(events, posts)
+  events = extend_events(events, posts)
+
+  # events.to_csv("extended_events.csv")
+  # events = pd.read_csv("extended_events.csv").drop(["Unnamed: 0"], axis=1)
+
   print("Create ffm dataset...")
   mappings, X, y = create_ffm_dataset(events)
   train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
