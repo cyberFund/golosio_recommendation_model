@@ -129,44 +129,35 @@ def create_mapping(series):
     mapping[mid] = idx
   return mapping
 
+def create_ffm_row(mapping, event):
+  return [
+    (0, mapping["uid_to_idx"].get(event["user_id"], max(mapping["uid_to_idx"].values()) + 1), 1),
+    (1, mapping["pid_to_idx"].get(event["post_permlink"], max(mapping["pid_to_idx"].values()) + 1), 1),
+    (2, mapping["aid_to_idx"].get(event["author"], max(mapping["aid_to_idx"].values()) + 1), 1),
+    (3, mapping["parid_to_idx"].get(event["parent_permlink"], max(mapping["parid_to_idx"].values()) + 1), 1),
+    (4, mapping["ftgid_to_idx"].get(event["first_tag"], max(mapping["ftgid_to_idx"].values()) + 1), 1),
+    (5, mapping["ltgid_to_idx"].get(event["last_tag"], max(mapping["ltgid_to_idx"].values()) + 1), 1),
+    (6, event["topic"], event["topic_probability"]),
+    (7, 1, event["time_coefficient"]),
+    (8, 1, event["popularity_coefficient"]),
+  ]
+
 def create_ffm_dataset(events, mapping=None):
   if not mapping:
-    uid_to_idx = create_mapping(events["user_id"])
-    pid_to_idx = create_mapping(events["post_permlink"])
-    aid_to_idx = create_mapping(events["author"])
-    parid_to_idx = create_mapping(events["parent_permlink"])
-    ftgid_to_idx = create_mapping(events["first_tag"])
-    ltgid_to_idx = create_mapping(events["last_tag"])
-  else:
-    uid_to_idx = mapping["uid_to_idx"]
-    pid_to_idx = mapping["pid_to_idx"]
-    aid_to_idx = mapping["aid_to_idx"]
-    parid_to_idx = mapping["parid_to_idx"]
-    ftgid_to_idx = mapping["ftgid_to_idx"]
-    ltgid_to_idx = mapping["ltgid_to_idx"]
+    mapping = {}
+    mapping["uid_to_idx"] = create_mapping(events["user_id"])
+    mapping["pid_to_idx"] = create_mapping(events["post_permlink"])
+    mapping["aid_to_idx"] = create_mapping(events["author"])
+    mapping["parid_to_idx"] = create_mapping(events["parent_permlink"])
+    mapping["ftgid_to_idx"] = create_mapping(events["first_tag"])
+    mapping["ltgid_to_idx"] = create_mapping(events["last_tag"])
 
-  result = []
-  for index in tqdm(events.index):
-    event = events.loc[index]
-    result.append([
-      (0, uid_to_idx.get(event["user_id"], max(uid_to_idx.values()) + 1), 1),
-      (1, pid_to_idx.get(event["post_permlink"], max(pid_to_idx.values()) + 1), 1),
-      (2, aid_to_idx.get(event["author"], max(aid_to_idx.values()) + 1), 1),
-      (3, parid_to_idx.get(event["parent_permlink"], max(parid_to_idx.values()) + 1), 1),
-      (4, ftgid_to_idx.get(event["first_tag"], max(ftgid_to_idx.values()) + 1), 1),
-      (5, ltgid_to_idx.get(event["last_tag"], max(ltgid_to_idx.values()) + 1), 1),
-      (6, event["topic"], event["topic_probability"]),
-      (7, 1, event["time_coefficient"]),
-      (8, 1, event["popularity_coefficient"]),
-    ])
-  return {
-    'uid_to_idx': uid_to_idx,
-    'pid_to_idx': pid_to_idx,
-    'aid_to_idx': aid_to_idx,
-    'parid_to_idx': parid_to_idx,
-    'ftgid_to_idx': ftgid_to_idx,
-    'ltgid_to_idx': ltgid_to_idx,
-  }, result, (events["like"] > 0.5).tolist()
+  # TODO get rid of this hack (problem with interpreting list of tuples in .apply function for a whole dataframe)
+  events["index"] = range(events.shape[0])
+  distributed_events = dd.from_pandas(events, npartitions=WORKERS)
+  events = events.set_index("index")
+  result = distributed_events["index"].apply(lambda x: create_ffm_row(mapping, events.loc[x])).compute()
+  return mapping, result, (events["like"] > 0.5).tolist()
 
 def build_model(train_X, train_y, test_X, test_y):
   train_ffm_data = ffm.FFMData(train_X, train_y)
