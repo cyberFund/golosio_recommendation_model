@@ -59,14 +59,16 @@ def prepare_posts(posts):
   posts = convert_numerical(posts)
   return posts
 
+def train_model(model):
+  model.build(1000)
+
 def create_model(posts):
   factors = posts.shape[1]
   trees = AnnoyIndex(factors) 
   for index, row in posts.iterrows():
     trees.add_item(index, row.tolist())
-  trees.build(1000)
   return trees
-
+  
 def save_similar_posts(url, database, posts, vectors, model):
   client = MongoClient(url)
   db = client[database]
@@ -83,6 +85,9 @@ def run_ann(database_url, database_name):
   vectors = prepare_posts(posts)
   print("Prepare model...")
   model = create_model(vectors)
+  print("Train model...")
+  train_model(model)
+  model.save("similar.ann")
   print("Save similar posts...")
   save_similar_posts(database_url, database_name, posts, vectors, model)
 
