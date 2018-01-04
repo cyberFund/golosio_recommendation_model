@@ -7,6 +7,7 @@ from pymongo import MongoClient
 import pandas as pd
 from gensim import corpora, models
 import pdb
+from tqdm import *
 
 WORD_LENGTH_QUANTILE = 10
 TEXT_LENGTH_QUANTILE = 66
@@ -40,29 +41,35 @@ def get_posts(url, database):
   return utils.preprocess_posts(posts)
 
 def remove_short_words(texts):
-  word_lengths = [len(item) for sublist in texts for item in sublist]
+  print("Find length of words...")
+  word_lengths = [len(item) for sublist in tqdm(texts) for item in sublist]
   word_length_quantile = np.percentile(np.array(word_lengths), WORD_LENGTH_QUANTILE)
-  return [[word for word in text if len(word) >= word_length_quantile] for text in texts]
+  print("Remove short words...")
+  return [[word for word in text if len(word) >= word_length_quantile] for text in tqdm(texts)]
 
 def remove_short_texts(texts):
-  text_lengths = [len(text) for text in texts]
+  print("Find length of texts...")
+  text_lengths = [len(text) for text in tqdm(texts)]
   text_length_quantile = np.percentile(np.array(text_lengths), TEXT_LENGTH_QUANTILE)
+  print("Remove short texts...")
   return [text for text in texts if len(text) >= text_length_quantile]
 
 def remove_high_frequent_words(texts):
+  print("Remove high frequent words...")
   dictionary = FreqDist([item for sublist in texts for item in sublist])
   word_frequencies = list(dictionary.values())
   high_word_frequency_quantile = np.percentile(np.array(word_frequencies), HIGH_WORD_FREQUENCY_QUANTILE)
-  return [[word for word in text if dictionary[word] < high_word_frequency_quantile] for text in texts]
+  return [[word for word in text if dictionary[word] < high_word_frequency_quantile] for text in tqdm(texts)]
 
 def remove_low_frequent_words(texts):
+  print("Remove low frequent words...")
   dictionary = FreqDist([item for sublist in texts for item in sublist])
   word_frequencies = list(dictionary.values())
   low_word_frequency_quantile = np.percentile(np.array(word_frequencies), LOW_WORD_FREQUENCY_QUANTILE)
-  return [[word for word in text if dictionary[word] >= low_word_frequency_quantile] for text in texts]
+  return [[word for word in text if dictionary[word] >= low_word_frequency_quantile] for text in tqdm(texts)]
 
 def prepare_posts(posts):
-  posts = [utils.prepare_post(post) for post in posts]
+  posts = [utils.prepare_post(post) for post in tqdm(posts)]
   posts = remove_short_words(posts)
   posts = remove_high_frequent_words(posts)
   posts = remove_low_frequent_words(posts)
@@ -74,7 +81,7 @@ def create_dictionary(texts):
   return dictionary
 
 def create_corpus(texts, dictionary):
-  corpus = [dictionary.doc2bow(text) for text in texts]
+  corpus = [dictionary.doc2bow(text) for text in tqdm(texts)]
   tfidf = models.TfidfModel(corpus, id2word=dictionary, normalize=True)
   corpora.MmCorpus.serialize('golos-corpora_tfidf.mm', tfidf[corpus])
   return corpora.MmCorpus('golos-corpora_tfidf.mm')
