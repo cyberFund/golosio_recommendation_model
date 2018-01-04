@@ -13,10 +13,13 @@ stopwords_list = stopwords.words('russian')
 tokenizer = RegexpTokenizer(r'\w+')
 stemmer = Mystem()
 
-def preprocess_posts(posts):
+def preprocess_posts(posts, include_all_tags=False):
   posts["post_permlink"] = "@" + posts["author"] + "/" + posts["permlink"]
-  posts["first_tag"] = posts["json_metadata"].apply(lambda x: x["tags"][0] if (type(x) is dict and "tags" in x.keys() and len(x["tags"])) else "")
-  posts["last_tag"] = posts["json_metadata"].apply(lambda x: x["tags"][-1] if (type(x) is dict and "tags" in x.keys() and len(x["tags"])) else "")
+  if include_all_tags:
+    posts["tags"] = posts["json_metadata"].apply(lambda x: x["tags"] if (type(x) is dict and "tags" in x.keys()) else [])
+  else:
+    posts["first_tag"] = posts["json_metadata"].apply(lambda x: x["tags"][0] if (type(x) is dict and "tags" in x.keys() and len(x["tags"])) else "")
+    posts["last_tag"] = posts["json_metadata"].apply(lambda x: x["tags"][-1] if (type(x) is dict and "tags" in x.keys() and len(x["tags"])) else "")
   return posts.drop(["json_metadata", "_id"], axis=1)
 
 def topics_to_vector(topics, n_topics=100):
@@ -66,4 +69,3 @@ def save_topics(url, database, posts, model, dictionary):
     topic = int(np.argmax(vector))
     topic_probability = float(np.max(vector))
     db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'topic': topic, 'topic_probability': topic_probability}})
-  

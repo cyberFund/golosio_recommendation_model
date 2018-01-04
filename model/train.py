@@ -198,7 +198,9 @@ def train(raw_events, database_url, database):
   print("Extend events...")
   events = extend_events(events, posts)
 
+  print("Save events...")
   events.to_csv("extended_events.csv")
+
   # events = pd.read_csv("extended_events.csv").drop(["Unnamed: 0"], axis=1)
 
   print("Create ffm dataset...")
