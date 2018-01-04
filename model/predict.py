@@ -9,7 +9,7 @@ import sys
 from tqdm import *
 import pdb
 
-POSTS_LIMIT = 10
+POSTS_LIMIT = 1000
 
 def get_new_posts(url, database):
   posts = pd.DataFrame()

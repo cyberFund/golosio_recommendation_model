@@ -176,7 +176,7 @@ def train(raw_events, database_url, database):
   print("Prepare user events...")
   user_events = get_user_events(raw_events)
 
-  # user_events.to_csv("user_events.csv")
+  user_events.to_csv("user_events.csv")
   # user_events = pd.read_csv("user_events.csv")
   # user_events.recommendations = user_events.recommendations.apply(lambda x: eval(x))
   # user_events.views = user_events.views.apply(lambda x: eval(x))
@@ -186,23 +186,25 @@ def train(raw_events, database_url, database):
   print("Prepare events...")
   events = get_events(user_events)
 
-  # events.to_csv("prepared_events.csv")
+  events.to_csv("prepared_events.csv")
   # events = pd.read_csv("prepared_events.csv").drop(["Unnamed: 0"], axis=1)
 
   print("Prepare posts...")
   posts = get_posts(database_url, database)
 
-  # posts.to_csv("prepared_posts.csv")
+  posts.to_csv("prepared_posts.csv")
   # posts = pd.read_csv("prepared_posts.csv").drop(["Unnamed: 0"], axis=1)
 
   print("Extend events...")
   events = extend_events(events, posts)
 
-  # events.to_csv("extended_events.csv")
+  events.to_csv("extended_events.csv")
   # events = pd.read_csv("extended_events.csv").drop(["Unnamed: 0"], axis=1)
 
   print("Create ffm dataset...")
   mappings, X, y = create_ffm_dataset(events)
+  joblib.dump(X, "./X.pkl")
+  joblib.dump(y, "./y.pkl")
   train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
   print("Build model...")
   model, train_auc_roc, test_auc_roc = build_model(train_X, train_y, test_X, test_y)
@@ -213,4 +215,5 @@ def train(raw_events, database_url, database):
 
 if (__name__ == "__main__"):
   raw_events = pd.read_csv(sys.argv[1], names=["id", "event_type", "value", "user_id", "refurl", "status", "created_at"])
+  # raw_events = raw_events.sample(int(raw_events.shape[0]/10))
   train(raw_events, sys.argv[2], sys.argv[3])
