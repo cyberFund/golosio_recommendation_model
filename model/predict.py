@@ -12,7 +12,7 @@ import pdb
 import datetime as dt
 
 USERS_POSTS_LIMIT = 100
-HOURS_LIMIT = 28 * 24
+HOURS_LIMIT = 30 * 24
 
 def get_new_posts(url, database):
   date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
@@ -46,7 +46,9 @@ def create_dataset(posts, events):
     user_events = events[events["user_id"] == user] 
     similar_posts = [posts.loc[post]["similar"] for post in user_events["post_permlink"] if post in posts.index]
     similar_posts = [post for posts in similar_posts for post in posts]
-    if len(similar_posts) > 0:      
+    seen_similar_posts = set(user_events["post_permlink"])
+    unseen_similar_posts = [post for posts in similar_posts if post not in seen_similar_posts]
+    if len(unseen_similar_posts) > 0:      
       selected_similar_posts = np.unique(np.random.choice(similar_posts, size=USERS_POSTS_LIMIT))
       user_dataset = pd.DataFrame()
       user_dataset["user_id"] = user
