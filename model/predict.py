@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from pymongo import MongoClient, DESCENDING
 import datetime as dt
@@ -8,11 +9,13 @@ import utils
 import sys
 from tqdm import *
 import pdb
+import datetime as dt
 
 USERS_POSTS_LIMIT = 100
-MAX_POSTS_LIMIT = 100000
+HOURS_LIMIT = 28 * 24
 
 def get_new_posts(url, database):
+  date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
   posts = pd.DataFrame()
   client = MongoClient(url)
   db = client[database]
@@ -21,7 +24,8 @@ def get_new_posts(url, database):
       'permlink' : {'$exists' : True},
       'depth': 0,
       'topic': {'$exists' : True},
-      'similar': {'$exists' : True}
+      'similar': {'$exists' : True},
+      'created': {'$gte': date}
     }, {
       'permlink': 1,
       'author': 1, 
@@ -32,7 +36,7 @@ def get_new_posts(url, database):
       'json_metadata': 1,
       'similar': 1
     }
-  ).sort("created", DESCENDING).limit(MAX_POSTS_LIMIT)))
+  )))
   return utils.preprocess_posts(posts)
 
 def create_dataset(posts, events):
@@ -40,7 +44,6 @@ def create_dataset(posts, events):
   dataset = pd.DataFrame(columns=["user_id", "post_permlink"])
   for user in tqdm(events["user_id"].unique()):
     user_events = events[events["user_id"] == user] 
-    pdb.set_trace()
     similar_posts = [posts.loc[post]["similar"] for post in user_events["post_permlink"] if post in posts.index]
     similar_posts = [post for posts in similar_posts for post in posts]
     if len(similar_posts) > 0:      
@@ -56,6 +59,7 @@ def save_recommendations(recommendations, url, database):
   posts = pd.DataFrame()
   client = MongoClient(url)
   db = client[database]
+  db.recommendation.drop()
   db.recommendation.insert_many(recommendations.to_dict('records'))
 
 def predict(events, database_url, database):
@@ -75,5 +79,5 @@ def predict(events, database_url, database):
   save_recommendations(dataset[["user_id", "post_permlink", "prediction"]], database_url, database)
 
 if (__name__ == "__main__"):
-  raw_events = pd.read_csv(sys.argv[1], names=["id", "event_type", "value", "user_id", "refurl", "status", "created_at"])
+  raw_events = pd.read_csv(sys.argv[1])
   predict(raw_events, sys.argv[2], sys.argv[3])
