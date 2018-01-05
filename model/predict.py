@@ -24,7 +24,7 @@ def get_new_posts(url, database):
       'permlink' : {'$exists' : True},
       'depth': 0,
       'topic': {'$exists' : True},
-      'similar': {'$exists' : True},
+      'similar_posts': {'$exists' : True},
       'created': {'$gte': date}
     }, {
       'permlink': 1,
@@ -34,7 +34,8 @@ def get_new_posts(url, database):
       'parent_permlink': 1,
       'created': 1,
       'json_metadata': 1,
-      'similar': 1
+      'similar_posts': 1,
+      'similar_distances': 1,
     }
   )))
   return utils.preprocess_posts(posts)
@@ -44,12 +45,16 @@ def create_dataset(posts, events):
   dataset = pd.DataFrame(columns=["user_id", "post_permlink"])
   for user in tqdm(events["user_id"].unique()):
     user_events = events[events["user_id"] == user] 
-    similar_posts = [posts.loc[post]["similar"] for post in user_events["post_permlink"] if post in posts.index]
+    similar_posts = [posts.loc[post]["similar_posts"] for post in user_events["post_permlink"] if post in posts.index]
     similar_posts = [post for posts in similar_posts for post in posts]
+    similar_distances = [posts.loc[post]["similar_distances"] for post in user_events["post_permlink"] if post in posts.index]
+    similar_distances = [distance for distances in similar_distances for distance in distances]
     seen_similar_posts = set(user_events["post_permlink"])
+    unseen_similar_distances = np.array([distance for index, distance in enumerate(similar_posts) if posts[index] not in seen_similar_posts])
+    unseen_similar_probabilities = (unseen_similar_distances.max() - unseen_similar_distances) / (unseen_similar_distances.max() - unseen_similar_distances.min())
     unseen_similar_posts = [post for posts in similar_posts if post not in seen_similar_posts]
     if len(unseen_similar_posts) > 0:      
-      selected_similar_posts = np.unique(np.random.choice(similar_posts, size=USERS_POSTS_LIMIT))
+      selected_similar_posts = np.unique(np.random.choice(similar_posts, size=USERS_POSTS_LIMIT, p=unseen_similar_probabilities))
       user_dataset = pd.DataFrame()
       user_dataset["user_id"] = user
       user_dataset["post_permlink"] = selected_similar_posts

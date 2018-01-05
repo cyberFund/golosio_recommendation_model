@@ -74,9 +74,9 @@ def save_similar_posts(url, database, posts, vectors, model):
   db = client[database]
   for index in tqdm(posts.index):
     post = posts.loc[index]
-    similar_indices = model.get_nns_by_vector(vectors.loc[index].tolist(), 5)
+    similar_indices, similar_distances = model.get_nns_by_vector(vectors.loc[index].tolist(), 5, include_distances=True)
     similar_posts = posts.loc[similar_indices]["post_permlink"].tolist()
-    db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'similar': similar_posts}})
+    db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'similar_posts': similar_posts, 'similar_distances': similar_distances}})
 
 def run_ann(database_url, database_name):
   print("Get posts...")
