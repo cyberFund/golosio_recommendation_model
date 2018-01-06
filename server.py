@@ -7,8 +7,9 @@ from pymongo import MongoClient
 import pandas as pd
 import pdb
 
-database_url = sys.argv[1]
-database_name = sys.argv[2]
+events = pd.read_csv(sys.argv[1])
+database_url = sys.argv[2]
+database_name = sys.argv[3]
 
 app = Flask(__name__)
 CORS(app)
@@ -28,6 +29,16 @@ def recommendations():
   )))
   recommendations_json = recommendations_df.drop(["_id"], axis=1).to_dict('records')
   return jsonify(recommendations_json)
+
+@app.route('/users')
+def users():
+  return jsonify(events["user_id"].unique().tolist())
+
+@app.route('/history')
+def history():
+  user = int(request.args.get("user"))
+  user_events = events[(events["user_id"] == user) & (events["like"] >= 0.7)]
+  return jsonify(user_events["post_permlink"].unique().tolist())
 
 if __name__ == '__main__':
   config(app)
