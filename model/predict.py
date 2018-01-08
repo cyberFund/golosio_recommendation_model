@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from pymongo import MongoClient, DESCENDING
 import datetime as dt
-from train import create_ffm_dataset, extend_events
+from train import create_ffm_dataset, extend_events, get_posts
 import ffm
 from sklearn.externals import joblib
 import utils
@@ -12,7 +12,7 @@ import pdb
 import datetime as dt
 
 USERS_POSTS_LIMIT = 100
-HOURS_LIMIT = 24
+HOURS_LIMIT = 30 * 24
 
 def get_new_posts(url, database):
   date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
@@ -72,11 +72,12 @@ def save_recommendations(recommendations, url, database):
 def predict(events, database_url, database):
   print("Get new posts...")
   new_posts = get_new_posts(database_url, database)
+  print("Get all posts...")
+  posts = get_posts(database_url, database)
   print("Create dataset...")
   dataset = create_dataset(new_posts, events)
   print("Extend events...")
-  dataset = extend_events(dataset, new_posts)
-  pdb.set_trace()
+  dataset = extend_events(dataset, posts)
   print("Prepare model...")
   model = ffm.read_model("./model.bin")
   mappings = joblib.load("./mappings.pkl")

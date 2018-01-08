@@ -60,10 +60,10 @@ def prepare_post(post):
   words = remove_stopwords(words)
   return lemmatize(words)
 
-def save_topics(url, database, posts, model, dictionary):
+def save_topics(url, database, posts, texts, model, dictionary):
   client = MongoClient(url)
   db = client[database]
-  posts["prepared_body"] = [prepare_post(post) for post in tqdm(posts["body"])]
+  posts["prepared_body"] = texts
   for index in tqdm(posts.index):
     post = posts.loc[index]
     post_topics = model.get_document_topics(dictionary.doc2bow(post["prepared_body"]))
