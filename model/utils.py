@@ -8,6 +8,7 @@ from pymystem3 import Mystem
 import numpy as np
 from pymongo import MongoClient
 import pdb
+from tqdm import *
 
 stopwords_list = stopwords.words('russian')
 tokenizer = RegexpTokenizer(r'\w+')
@@ -62,8 +63,9 @@ def prepare_post(post):
 def save_topics(url, database, posts, model, dictionary):
   client = MongoClient(url)
   db = client[database]
-  posts["prepared_body"] = [prepare_post(post) for post in posts["body"]]
-  for _, post in posts.iterrows():
+  posts["prepared_body"] = [prepare_post(post) for post in tqdm(posts["body"])]
+  for index in tqdm(posts.index):
+    post = posts.loc[index]
     post_topics = model.get_document_topics(dictionary.doc2bow(post["prepared_body"]))
     vector = topics_to_vector(post_topics, n_topics=100)
     topic = int(np.argmax(vector))

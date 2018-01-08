@@ -8,7 +8,7 @@ import pdb
 from tqdm import *
 from annoy import AnnoyIndex
 
-NUMBER_OF_TREES = 1000
+NUMBER_OF_TREES = 100
 
 def get_posts(url, database):
   client = MongoClient(url)
@@ -40,9 +40,14 @@ def add_popular_tags(posts):
   return posts.drop(["tags"], axis=1)
 
 def convert_categorical(posts):
-  categorical_columns = ["author", "parent_permlink"]
+  categorical_columns = ["author", "parent_permlink", "topic"]
   for column in categorical_columns:
-    posts[column] = posts[column].astype("category").cat.codes
+    all_values, value_counts = np.unique(posts[column].tolist(), return_counts=True)
+    popular_values = all_values[np.argsort(-value_counts)][0:100]
+    for value in tqdm(popular_values):
+        posts[str(value) + "_" + column] = posts[column].apply(lambda x: x == value)
+    posts["another_" + column] = posts[column].apply(lambda x: x not in popular_values)
+    posts = posts.drop([column], axis=1)
   return posts
 
 def convert_numerical(posts):
