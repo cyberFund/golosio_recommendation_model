@@ -70,10 +70,11 @@ def remove_low_frequent_words(texts):
 
 def prepare_posts(posts):
   posts = [utils.prepare_post(post) for post in tqdm(posts)]
-  posts = remove_short_words(posts)
-  posts = remove_high_frequent_words(posts)
-  posts = remove_low_frequent_words(posts)
-  return remove_short_texts(posts)
+  usable_posts = remove_short_words(posts)
+  usable_posts = remove_high_frequent_words(usable_posts)
+  usable_posts = remove_low_frequent_words(usable_posts)
+  usable_posts = remove_short_texts(usable_posts)
+  return posts, usable_posts
 
 def create_dictionary(texts):
   dictionary = corpora.Dictionary(texts)
@@ -101,11 +102,11 @@ def run_lda(database_url, database_name):
   print("Get posts...")
   posts = get_posts(database_url, database_name)
   print("Prepare posts...")
-  texts = prepare_posts(posts["body"])
+  texts, usable_texts = prepare_posts(posts["body"])
   print("Prepare model...")
-  model, dictionary = create_model(texts)
+  model, dictionary = create_model(usable_texts)
   print("Save topics...")
-  utils.save_topics(database_url, database_name, posts, model, dictionary)
+  utils.save_topics(database_url, database_name, posts, texts, model, dictionary)
 
 if (__name__ == "__main__"):
   run_lda(sys.argv[1], sys.argv[2])
