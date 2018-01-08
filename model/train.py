@@ -157,7 +157,7 @@ def create_ffm_dataset(events, mapping=None):
   distributed_events = dd.from_pandas(events, npartitions=WORKERS)
   events = events.set_index("index")
   result = distributed_events["index"].apply(lambda x: create_ffm_row(mapping, events.loc[x])).compute()
-  return mapping, result, (events["like"] > 0.5).tolist()
+  return mapping, result, (events["like"] == 1).tolist()
 
 def build_model(train_X, train_y, test_X, test_y):
   train_ffm_data = ffm.FFMData(train_X, train_y)
@@ -217,5 +217,5 @@ def train(raw_events, database_url, database):
 
 if (__name__ == "__main__"):
   raw_events = pd.read_csv(sys.argv[1], names=["id", "event_type", "value", "user_id", "refurl", "status", "created_at"])
-  # raw_events = raw_events.sample(int(raw_events.shape[0]/10))
+  # raw_events = raw_events.sample(int(raw_events.shape[0]/1000))
   train(raw_events, sys.argv[2], sys.argv[3])
