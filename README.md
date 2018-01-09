@@ -20,7 +20,7 @@ golosio-recommendation-model
 
 To add tasks to cron tab:
 ```bash
-install.sh EVENTS_PATH HOST:PORT DATABASE
+install.sh HOST:PORT DATABASE
 ```
 
 To remove tasks from cron tab, run:
