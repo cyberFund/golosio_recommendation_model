@@ -28,6 +28,21 @@ def parse_refurl(url):
 def parse_recommendations(urls):
   return ["@" + url[1:-1] for url in urls[1:-1].split(",") if len(url) > 0]
 
+def get_raw_events(url, database):
+  client = MongoClient(url)
+  db = client[database]
+  events = pd.DataFrame(list(db.event.find(
+    {}, {
+      'event_type': 1, 
+      'value' : 1,
+      'user_id' : 1,
+      'refurl': 1,
+      'status': 1,
+      'created_at': 1
+    }
+  )))
+  return events
+
 def prepare_raw_events(raw_events):
   raw_events["refurl"] = raw_events["refurl"].astype(str)
   raw_events["value"] = raw_events["value"].astype(str)
@@ -216,6 +231,6 @@ def train(raw_events, database_url, database):
   joblib.dump(mappings, "./mappings.pkl")
 
 if (__name__ == "__main__"):
-  raw_events = pd.read_csv(sys.argv[1], names=["id", "event_type", "value", "user_id", "refurl", "status", "created_at"])
+  raw_events = get_raw_events(sys.argv[1], sys.argv[2])
   # raw_events = raw_events.sample(int(raw_events.shape[0]/1000))
-  train(raw_events, sys.argv[2], sys.argv[3])
+  train(raw_events, sys.argv[1], sys.argv[2])
