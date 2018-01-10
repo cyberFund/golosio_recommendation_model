@@ -44,4 +44,5 @@ def history():
 if __name__ == '__main__':
   config(app)
   # TODO add certificate
-  app.run(port=8080, ssl_context='adhoc')
+  port = 8080 # Use desired port
+  app.run(port=port, ssl_context='adhoc')
