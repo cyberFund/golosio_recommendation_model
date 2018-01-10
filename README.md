@@ -2,6 +2,7 @@
 
 This repo contains files of recommendation system for golos.io
 
+```
 .
 +-- similar.ann - Saved ANN model for finding similar posts
 +-- golos-corpora.dict - Saved dictionary for LDA
@@ -15,7 +16,7 @@ This repo contains files of recommendation system for golos.io
    +-- lda.py - Process of finding LDA topics for each post
    +-- train.py - Process of finding LDA topics for each 
    +-- predict.py - Process of creating predictions
-
+```
 # Installation
 
 To add tasks to cron tab:
