@@ -21,7 +21,12 @@ This repo contains files of recommendation system for golos.io
 
 To add tasks to cron tab:
 ```bash
-$ install.sh HOST:PORT DATABASE
+$ install.sh DATABASE_HOST:DATABASE_PORT DATABASE_NAME
+```
+
+For example:
+```bash
+$ install.sh localhost:27017 steemdb_1
 ```
 
 To remove tasks from cron tab, run:
@@ -32,7 +37,12 @@ $ uninstall.sh
 
 To start server, run:
 ```bash
-$ run.sh HOST:PORT DATABASE
+$ run.sh DATABASE_HOST:DATABASE_PORT DATABASE_NAME
+```
+
+For example:
+```bash
+$ run.sh localhost:27017 steemdb_1
 ```
 
 To get supported user ids, run
