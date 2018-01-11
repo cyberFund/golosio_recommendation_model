@@ -11,8 +11,8 @@ from tqdm import *
 import pdb
 import datetime as dt
 
-USERS_POSTS_LIMIT = 100
-HOURS_LIMIT = 30 * 24
+USERS_POSTS_LIMIT = 100 # Max number of recommendations
+HOURS_LIMIT = 30 * 24 # Time window for recommended posts
 
 def get_new_posts(url, database):
   date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
