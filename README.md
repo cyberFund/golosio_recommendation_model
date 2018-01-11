@@ -130,3 +130,20 @@ $ curl localhost:8080/recommendations?user=58158
   }
 ]
 ```
+
+# Configuration
+
+You can change service port here:
+
+```python
+# server.py
+port = 8080 # Use desired port
+```
+
+Play with constansts to change time window for recommended posts and number of recommendations for each user
+
+```python
+# model/predict.py
+USERS_POSTS_LIMIT = 100 # Max number of recommendations
+HOURS_LIMIT = 30 * 24 # Time window for recommended posts
+```
