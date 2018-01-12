@@ -1,1 +1,1 @@
-python3 ./extended_events.csv $1 $2
+python3 server.py $1 $2

@@ -7,9 +7,9 @@ from pymongo import MongoClient
 import pandas as pd
 import pdb
 
-events = pd.read_csv(sys.argv[1])
-database_url = sys.argv[2]
-database_name = sys.argv[3]
+events = pd.read_csv("./extended_events.csv")
+database_url = sys.argv[1]
+database_name = sys.argv[2]
 
 app = Flask(__name__)
 CORS(app)
@@ -40,6 +40,20 @@ def history():
   user = int(request.args.get("user"))
   user_events = events[(events["user_id"] == user) & (events["like"] > 0.7)]
   return jsonify(user_events["post_permlink"].unique().tolist())
+
+@app.route('/similar')
+def similar():
+  permlink = request.args.get("permlink")
+  client = MongoClient(database_url)
+  db = client[database_name]
+  comment = db.comment.find_one(
+    {
+      '_id': permlink[1:]
+    }, {
+      'similar_posts': 1,
+    }
+  )
+  return jsonify(comment["similar_posts"])
 
 if __name__ == '__main__':
   config(app)
