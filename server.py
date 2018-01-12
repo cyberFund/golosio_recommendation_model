@@ -27,9 +27,12 @@ def recommendations():
       'prediction': 1
     }
   )))
-  recommendations_df = recommendations_df.sort_values(["prediction"], ascending=[0])
-  recommendations_json = recommendations_df.drop(["_id"], axis=1).to_dict('records')
-  return jsonify(recommendations_json)
+  if (recommendations_df.shape[0] > 0):
+    recommendations_df = recommendations_df.sort_values(["prediction"], ascending=[0])
+    recommendations_json = recommendations_df.drop(["_id"], axis=1).to_dict('records')
+    return jsonify(recommendations_json)
+  else:
+    return jsonify([])
 
 @app.route('/users')
 def users():
@@ -53,7 +56,10 @@ def similar():
       'similar_posts': 1,
     }
   )
-  return jsonify(comment["similar_posts"])
+  if comment:
+    return jsonify(comment["similar_posts"])
+  else:
+    return jsonify([])
 
 if __name__ == '__main__':
   config(app)
