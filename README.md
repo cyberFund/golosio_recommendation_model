@@ -11,6 +11,7 @@ This repo contains files of recommendation system for golos.io
 +-- mappings.pkl - Saved mappings for FFM model
 +-- model.bin - Saved FFM model
 +-- server.py - Flask server for recommendation system
++-- sync_comments.py - Synchronizing MongoDB with Golos node
 +-- model
    +-- ann.py - Process of finding similar posts
    +-- lda.py - Process of finding LDA topics for each post
