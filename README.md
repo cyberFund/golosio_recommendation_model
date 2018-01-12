@@ -34,7 +34,7 @@ To remove tasks from cron tab, run:
 $ uninstall.sh
 ```
 # Architecture
-Format: ![Recommendation model architecture](architecture.png)
+Recommendation model architecture: ![Recommendation model architecture](architecture.png)
 # How to use it
 
 To start server, run:
