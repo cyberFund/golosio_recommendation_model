@@ -15,7 +15,8 @@ This repo contains files of recommendation system for golos.io
 +-- model
    +-- ann.py - Process of finding similar posts
    +-- lda.py - Process of finding LDA topics for each post
-   +-- train.py - Process of finding LDA topics for each 
+   +-- doc2vec.py - Process of finding doc2vec vectors for each post
+   +-- train.py - Process of training FFM model
    +-- predict.py - Process of creating predictions
 ```
 # Installation
@@ -35,7 +36,9 @@ To remove tasks from cron tab, run:
 $ uninstall.sh
 ```
 # Architecture
+
 Recommendation model architecture: ![Recommendation model architecture](architecture.png)
+
 # How to use it
 
 To start server, run:
