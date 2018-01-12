@@ -1,1 +1,14 @@
 *.bin filter=lfs diff=lfs merge=lfs -text
+*.ann filter=lfs diff=lfs merge=lfs -text
+extended_events.csv filter=lfs diff=lfs merge=lfs -text
+*.dict filter=lfs diff=lfs merge=lfs -text
+*.mm filter=lfs diff=lfs merge=lfs -text
+*.mm.index filter=lfs diff=lfs merge=lfs -text
+*.doc2vec_model filter=lfs diff=lfs merge=lfs -text
+*.lda_model filter=lfs diff=lfs merge=lfs -text
+*.npy filter=lfs diff=lfs merge=lfs -text
+*.id2word filter=lfs diff=lfs merge=lfs -text
+*.state filter=lfs diff=lfs merge=lfs -text
+*.json filter=lfs diff=lfs merge=lfs -text
+*.pkl filter=lfs diff=lfs merge=lfs -text
+*.csv filter=lfs diff=lfs merge=lfs -text
