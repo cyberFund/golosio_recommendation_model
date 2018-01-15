@@ -14,12 +14,16 @@ NUMBER_OF_RECOMMENDATIONS = 10
 NUMBER_OF_VALUES = 500
 
 def get_posts(url, database):
+  """
+    Function to get posts with defined inferred vector and topic from mongo database
+  """
   client = MongoClient(url)
   db = client[database]
   posts = pd.DataFrame(list(db.comment.find(
     {
       'permlink' : {'$exists' : True},
       'inferred_vector' : {'$exists' : True},
+      'topic' : {'$exists' : True},
       'depth': 0,
     }, {
       'permlink': 1,
@@ -36,6 +40,9 @@ def get_posts(url, database):
   return utils.preprocess_posts(posts, include_all_tags=True)
 
 def add_popular_tags(posts):
+  """
+    Function to encode tags with only popular values
+  """
   all_tags, tag_counts = np.unique([tag for tags in posts["tags"] for tag in tags], return_counts=True)
   popular_tags = all_tags[np.argsort(-tag_counts)][0:NUMBER_OF_VALUES]
   for tag in tqdm(popular_tags):
@@ -44,6 +51,9 @@ def add_popular_tags(posts):
   return posts.drop(["tags"], axis=1)
 
 def convert_categorical(posts):
+  """
+    Function to one-hot encode categorical columns with only popular values
+  """
   categorical_columns = ["author", "parent_permlink", "topic"]
   for column in categorical_columns:
     all_values, value_counts = np.unique(posts[column].tolist(), return_counts=True)
@@ -55,13 +65,19 @@ def convert_categorical(posts):
   return posts
 
 def convert_numerical(posts):
-  float_columns = ["probability", "coefficient"]
+  """
+    Function to convert numerical columns to int and float
+  """
+  float_columns = ["probability", "coefficient", "created"]
   for column in posts.columns:
       if column not in float_columns:
           posts[column] = posts[column].astype(int)
   return posts
 
 def convert_array(posts):
+  """
+    Function to convert columns with float arrays to a set of columns
+  """
   array_columns = ["inferred_vector"]
   for column in array_columns:
     length = len(posts[column].iloc[0])
@@ -71,6 +87,9 @@ def convert_array(posts):
   return posts
 
 def convert_dates(posts):
+  """
+    Function to convert dates to coefficients from 0 to 1
+  """
   dates_columns = ["created"]
   for column in dates_columns:
     posts[column] = pd.to_datetime(posts[column]).apply(lambda x: x.value)
@@ -78,18 +97,27 @@ def convert_dates(posts):
   return posts
 
 def prepare_posts(posts):
+  """
+    Function to vectorise posts for ANN algorithm
+  """
   posts = posts.drop(['body', 'permlink', 'post_permlink'], axis=1)
   posts = add_popular_tags(posts)
   posts = convert_categorical(posts)
   posts = convert_array(posts)
-  posts = convert_numerical(posts)
   posts = convert_dates(posts)
+  posts = convert_numerical(posts)
   return posts
 
 def train_model(model):
+  """
+    Function to train ANN model
+  """
   model.build(NUMBER_OF_TREES)
 
 def create_model(posts):
+  """
+    Function to create ANN model from vectors
+  """
   factors = posts.shape[1]
   trees = AnnoyIndex(factors) 
   for index, row in posts.iterrows():
@@ -97,17 +125,25 @@ def create_model(posts):
   return trees
 
 def save_similar_posts(url, database, posts, vectors, model):
+  """
+    Function to save similar posts for each post within created model to mongo database
+  """
   client = MongoClient(url)
   db = client[database]
   for index in tqdm(posts.index):
     post = posts.loc[index]
     similar_indices, similar_distances = model.get_nns_by_vector(vectors.loc[index].tolist(), NUMBER_OF_RECOMMENDATIONS, include_distances=True)
     similar_posts = posts.loc[similar_indices]["post_permlink"].tolist()
-    # if (np.sum(similar_distances) == 0):
-    #  pdb.set_trace()
     db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'similar_posts': similar_posts, 'similar_distances': similar_distances}})
 
 def run_ann(database_url, database_name):
+  """
+    Function to run ANN process:
+    - Get posts from mongo
+    - Vectorize posts
+    - Create and train ANN model from vectorized posts
+    - Save similar posts to mongo database
+  """
   print("Get posts...")
   posts = get_posts(database_url, database_name)
   print("Prepare posts...")
