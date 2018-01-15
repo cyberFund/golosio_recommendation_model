@@ -7,10 +7,11 @@ import pandas as pd
 import pdb
 from tqdm import *
 from annoy import AnnoyIndex
+from sklearn.preprocessing import quantile_transform
 
-NUMBER_OF_TREES = 1000
+NUMBER_OF_TREES = 300
 NUMBER_OF_RECOMMENDATIONS = 10
-NUMBER_OF_VALUES = 100
+NUMBER_OF_VALUES = 500
 
 def get_posts(url, database):
   client = MongoClient(url)
@@ -22,7 +23,7 @@ def get_posts(url, database):
       'depth': 0,
     }, {
       'permlink': 1,
-      'author': 1, 
+      'author': 1,
       'topic' : 1,
       'topic_probability' : 1,
       'inferred_vector': 1,
@@ -69,12 +70,20 @@ def convert_array(posts):
     posts = posts.drop([column], axis=1)
   return posts
 
+def convert_dates(posts):
+  dates_columns = ["created"]
+  for column in dates_columns:
+    posts[column] = pd.to_datetime(posts[column]).apply(lambda x: x.value)
+    posts[column] = quantile_transform(posts[column].values.reshape(-1, 1)).reshape(-1)
+  return posts
+
 def prepare_posts(posts):
-  posts = posts.drop(['body', 'created', 'permlink', 'post_permlink'], axis=1)
+  posts = posts.drop(['body', 'permlink', 'post_permlink'], axis=1)
   posts = add_popular_tags(posts)
   posts = convert_categorical(posts)
   posts = convert_array(posts)
   posts = convert_numerical(posts)
+  posts = convert_dates(posts)
   return posts
 
 def train_model(model):
