@@ -27,22 +27,7 @@ def parse_refurl(url):
 
 def parse_recommendations(urls):
   return ["@" + url[1:-1] for url in urls[1:-1].split(",") if len(url) > 0]
-
-def get_raw_events(url, database):
-  client = MongoClient(url)
-  db = client[database]
-  events = pd.DataFrame(list(db.event.find(
-    {}, {
-      'event_type': 1, 
-      'value' : 1,
-      'user_id' : 1,
-      'refurl': 1,
-      'status': 1,
-      'created_at': 1
-    }
-  )))
-  return events
-
+z
 def prepare_raw_events(raw_events):
   raw_events["refurl"] = raw_events["refurl"].astype(str)
   raw_events["value"] = raw_events["value"].astype(str)
@@ -186,9 +171,9 @@ def build_model(train_X, train_y, test_X, test_y):
   return model, roc_auc_score(train_y, model.predict(train_ffm_data)), roc_auc_score(test_y, model.predict(test_ffm_data))
 
 def train(raw_events, database_url, database):
-  print("Prepare raw events...")
+  utils.log("FFM", "Prepare raw events...")
   raw_events = prepare_raw_events(raw_events)
-  print("Prepare user events...")
+  utils.log("FFM", "Prepare user events...")
   user_events = get_user_events(raw_events)
 
   user_events.to_csv("user_events.csv")
@@ -198,39 +183,39 @@ def train(raw_events, database_url, database):
   # user_events.votes = user_events.votes.apply(lambda x: eval(x))
   # user_events.comments = user_events.comments.apply(lambda x: eval(x))
 
-  print("Prepare events...")
+  utils.log("FFM", "Prepare events...")
   events = get_events(user_events)
 
   events.to_csv("prepared_events.csv")
   # events = pd.read_csv("prepared_events.csv").drop(["Unnamed: 0"], axis=1)
 
-  print("Prepare posts...")
+  utils.log("FFM", "Prepare posts...")
   posts = get_posts(database_url, database)
 
   posts.to_csv("prepared_posts.csv")
   # posts = pd.read_csv("prepared_posts.csv").drop(["Unnamed: 0"], axis=1)
 
-  print("Extend events...")
+  utils.log("FFM", "Extend events...")
   events = extend_events(events, posts)
 
-  print("Save events...")
+  utils.log("FFM", "Save events...")
   events.to_csv("extended_events.csv")
 
   # events = pd.read_csv("extended_events.csv").drop(["Unnamed: 0"], axis=1)
 
-  print("Create ffm dataset...")
+  utils.log("FFM", "Create ffm dataset...")
   mappings, X, y = create_ffm_dataset(events)
   joblib.dump(X, "./X.pkl")
   joblib.dump(y, "./y.pkl")
   train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
-  print("Build model...")
+  utils.log("FFM", "Build model...")
   model, train_auc_roc, test_auc_roc = build_model(train_X, train_y, test_X, test_y)
-  print(train_auc_roc)
-  print(test_auc_roc)
+  utils.log("FFM", train_auc_roc)
+  utils.log("FFM", test_auc_roc)
   model.save_model("./model.bin")
   joblib.dump(mappings, "./mappings.pkl")
 
 if (__name__ == "__main__"):
-  raw_events = get_raw_events(sys.argv[1], sys.argv[2])
+  raw_events = pd.read_csv(sys.argv[1], names=["id", "event_type", "value", "user_id", "refurl", "status", "created_at"])
   # raw_events = raw_events.sample(int(raw_events.shape[0]/1000))
-  train(raw_events, sys.argv[1], sys.argv[2])
+  train(raw_events, sys.argv[2], sys.argv[3])

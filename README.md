@@ -153,3 +153,17 @@ Play with constansts to change time window for recommended posts and number of r
 USERS_POSTS_LIMIT = 100 # Max number of recommendations
 HOURS_LIMIT = 30 * 24 # Time window for recommended posts
 ```
+
+# Tests and logs
+
+To run load tests, download first version of a model and use:
+```bash
+python3 -m unittest tests.load_test_case
+```
+
+It'll show average response time for actions that returns recommendations and similar posts.
+
+To see model logs, run:
+```bash
+tail -f ./model.log
+```
