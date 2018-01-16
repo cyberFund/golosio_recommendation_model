@@ -55,7 +55,7 @@ def convert_categorical(posts):
   return posts
 
 def convert_numerical(posts):
-  float_columns = ["probability", "coefficient"]
+  float_columns = ["probability", "created"]
   for column in posts.columns:
       if column not in float_columns:
           posts[column] = posts[column].astype(int)
@@ -82,8 +82,8 @@ def prepare_posts(posts):
   posts = add_popular_tags(posts)
   posts = convert_categorical(posts)
   posts = convert_array(posts)
-  posts = convert_numerical(posts)
   posts = convert_dates(posts)
+  posts = convert_numerical(posts)
   return posts
 
 def train_model(model):
