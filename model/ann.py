@@ -46,8 +46,8 @@ def add_popular_tags(posts):
   all_tags, tag_counts = np.unique([tag for tags in posts["tags"] for tag in tags], return_counts=True)
   popular_tags = all_tags[np.argsort(-tag_counts)][0:NUMBER_OF_VALUES]
   for tag in tqdm(popular_tags):
-    posts[tag + "_tag"] = posts["tags"].apply(lambda x: tag in x)
-  posts["another_tags"] = posts["tags"].apply(lambda x: len([t for t in x if t not in popular_tags]) > 0)
+    posts[tag + "_tag"] = posts["tags"].apply(lambda x: tag in x).astype(int)
+  posts["another_tags"] = posts["tags"].apply(lambda x: len([t for t in x if t not in popular_tags]) > 0).astype(int)
   return posts.drop(["tags"], axis=1)
 
 def convert_categorical(posts):
@@ -59,19 +59,9 @@ def convert_categorical(posts):
     all_values, value_counts = np.unique(posts[column].tolist(), return_counts=True)
     popular_values = all_values[np.argsort(-value_counts)][0:NUMBER_OF_VALUES]
     for value in tqdm(popular_values):
-        posts[str(value) + "_" + column] = posts[column].apply(lambda x: x == value)
-    posts["another_" + column] = posts[column].apply(lambda x: x not in popular_values)
+        posts[str(value) + "_" + column] = posts[column].apply(lambda x: x == value).astype(int)
+    posts["another_" + column] = posts[column].apply(lambda x: x not in popular_values).astype(int)
     posts = posts.drop([column], axis=1)
-  return posts
-
-def convert_numerical(posts):
-  """
-    Function to convert numerical columns to int and float
-  """
-  float_columns = ["probability", "created"]
-  for column in posts.columns:
-      if column not in float_columns:
-          posts[column] = posts[column].astype(int)
   return posts
 
 def convert_array(posts):
@@ -105,7 +95,6 @@ def prepare_posts(posts):
   posts = convert_categorical(posts)
   posts = convert_array(posts)
   posts = convert_dates(posts)
-  posts = convert_numerical(posts)
   return posts
 
 def train_model(model):
@@ -132,7 +121,7 @@ def save_similar_posts(url, database, posts, vectors, model):
   db = client[database]
   for index in tqdm(posts.index):
     post = posts.loc[index]
-    similar_indices, similar_distances = model.get_nns_by_vector(vectors.loc[index].tolist(), NUMBER_OF_RECOMMENDATIONS, include_distances=True)
+    similar_indices, similar_distances = model.get_nns_by_item(index, NUMBER_OF_RECOMMENDATIONS, include_distances=True)
     similar_posts = posts.loc[similar_indices]["post_permlink"].tolist()
     db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'similar_posts': similar_posts, 'similar_distances': similar_distances}})
 
