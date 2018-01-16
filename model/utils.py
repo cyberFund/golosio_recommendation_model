@@ -9,6 +9,9 @@ import numpy as np
 from pymongo import MongoClient
 import pdb
 from tqdm import *
+import logging
+
+logging.basicConfig(filename='model.log', format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 stopwords_list = stopwords.words('russian')
 tokenizer = RegexpTokenizer(r'\w+')
@@ -71,3 +74,6 @@ def save_topics(url, database, posts, texts, model, dictionary):
     topic = int(np.argmax(vector))
     topic_probability = float(np.max(vector))
     db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'topic': topic, 'topic_probability': topic_probability}})
+
+def log(model, message):
+  logging.warning(model + ": " + message)

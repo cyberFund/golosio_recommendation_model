@@ -41,28 +41,28 @@ def get_posts(url, database):
   return utils.preprocess_posts(posts)
 
 def remove_short_words(texts):
-  print("Find length of words...")
+  utils.log("LDA", "Find length of words...")
   word_lengths = [len(item) for sublist in tqdm(texts) for item in sublist]
   word_length_quantile = np.percentile(np.array(word_lengths), WORD_LENGTH_QUANTILE)
-  print("Remove short words...")
+  utils.log("LDA", "Remove short words...")
   return [[word for word in text if len(word) >= word_length_quantile] for text in tqdm(texts)]
 
 def remove_short_texts(texts):
-  print("Find length of texts...")
+  utils.log("LDA", "Find length of texts...")
   text_lengths = [len(text) for text in tqdm(texts)]
   text_length_quantile = np.percentile(np.array(text_lengths), TEXT_LENGTH_QUANTILE)
-  print("Remove short texts...")
+  utils.log("LDA", "Remove short texts...")
   return [text for text in texts if len(text) >= text_length_quantile]
 
 def remove_high_frequent_words(texts):
-  print("Remove high frequent words...")
+  utils.log("LDA", "Remove high frequent words...")
   dictionary = FreqDist([item for sublist in texts for item in sublist])
   word_frequencies = list(dictionary.values())
   high_word_frequency_quantile = np.percentile(np.array(word_frequencies), HIGH_WORD_FREQUENCY_QUANTILE)
   return [[word for word in text if dictionary[word] < high_word_frequency_quantile] for text in tqdm(texts)]
 
 def remove_low_frequent_words(texts):
-  print("Remove low frequent words...")
+  utils.log("LDA", "Remove low frequent words...")
   dictionary = FreqDist([item for sublist in texts for item in sublist])
   word_frequencies = list(dictionary.values())
   low_word_frequency_quantile = np.percentile(np.array(word_frequencies), LOW_WORD_FREQUENCY_QUANTILE)
@@ -99,13 +99,13 @@ def create_model(texts):
   return model, dictionary
 
 def run_lda(database_url, database_name):
-  print("Get posts...")
+  utils.log("LDA", "Get posts...")
   posts = get_posts(database_url, database_name)
-  print("Prepare posts...")
+  utils.log("LDA", "Prepare posts...")
   texts, usable_texts = prepare_posts(posts["body"])
-  print("Prepare model...")
+  utils.log("LDA", "Prepare model...")
   model, dictionary = create_model(usable_texts)
-  print("Save topics...")
+  utils.log("LDA", "Save topics...")
   utils.save_topics(database_url, database_name, posts, texts, model, dictionary)
 
 if (__name__ == "__main__"):

@@ -144,18 +144,18 @@ def run_ann(database_url, database_name):
     - Create and train ANN model from vectorized posts
     - Save similar posts to mongo database
   """
-  print("Get posts...")
+  utils.log("ANN", "Get posts...")
   posts = get_posts(database_url, database_name)
-  print("Prepare posts...")
+  utils.log("ANN", "Prepare posts...")
   vectors = prepare_posts(posts)
   vectors.to_csv("./vectors.csv")
   vectors = pd.read_csv("./vectors.csv")
-  print("Prepare model...")
+  utils.log("ANN", "Prepare model...")
   model = create_model(vectors)
-  print("Train model...")
+  utils.log("ANN", "Train model...")
   train_model(model)
   model.save("similar.ann")
-  print("Save similar posts...")
+  utils.log("ANN", "Save similar posts...")
   save_similar_posts(database_url, database_name, posts, vectors, model)
 
 if (__name__ == "__main__"):

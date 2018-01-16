@@ -73,21 +73,21 @@ def save_recommendations(recommendations, url, database):
   db.recommendation.insert_many(recommendations.to_dict('records'))
 
 def predict(events, database_url, database):
-  print("Get new posts...")
+  utils.log("FFM", "Get new posts...")
   new_posts = get_new_posts(database_url, database)
-  print("Get all posts...")
+  utils.log("FFM", "Get all posts...")
   posts = get_posts(database_url, database)
-  print("Create dataset...")
+  utils.log("FFM", "Create dataset...")
   dataset = create_dataset(new_posts, events)
-  print("Extend events...")
+  utils.log("FFM", "Extend events...")
   dataset = extend_events(dataset, posts)
-  print("Prepare model...")
+  utils.log("FFM", "Prepare model...")
   model = ffm.read_model("./model.bin")
   mappings = joblib.load("./mappings.pkl")
   mappings, ffm_dataset_X, ffm_dataset_y = create_ffm_dataset(dataset, mappings)
   ffm_dataset = ffm.FFMData(ffm_dataset_X, ffm_dataset_y)
   dataset["prediction"] = model.predict(ffm_dataset)
-  print("Save recommendations...")
+  utils.log("FFM", "Save recommendations...")
   save_recommendations(dataset[["user_id", "post_permlink", "prediction"]], database_url, database)
 
 if (__name__ == "__main__"):

@@ -28,7 +28,7 @@ def get_new_posts(url, database):
   return utils.preprocess_posts(posts)
 
 def run_lda(database_url, database_name):
-  print("Getting new posts...")
+  utils.log("LDA", "Getting new posts...")
   posts = get_new_posts(database_url, database_name)
   dictionary = corpora.Dictionary.load('golos-corpora.dict')
   model = models.LdaMulticore.load('golos.lda_model')
