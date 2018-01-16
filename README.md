@@ -165,5 +165,5 @@ It'll show average response time for actions that returns recommendations and si
 
 To see model logs, run:
 ```bash
-cat ./model.log
+tail -f ./model.log
 ```
