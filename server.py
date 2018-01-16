@@ -54,12 +54,13 @@ def similar():
       '_id': permlink[1:]
     }, {
       'similar_posts': 1,
+      'similar_distances': 1
     }
   )
   if comment:
-    return jsonify(comment["similar_posts"])
+    return jsonify(dict(zip(comment["similar_posts"], comment["similar_distances"])))
   else:
-    return jsonify([])
+    return jsonify({})
 
 if __name__ == '__main__':
   config(app)
