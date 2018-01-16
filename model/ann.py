@@ -68,7 +68,7 @@ def convert_numerical(posts):
   """
     Function to convert numerical columns to int and float
   """
-  float_columns = ["probability", "coefficient", "created"]
+  float_columns = ["probability", "created"]
   for column in posts.columns:
       if column not in float_columns:
           posts[column] = posts[column].astype(int)
