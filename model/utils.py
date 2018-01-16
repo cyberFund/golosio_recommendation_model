@@ -10,6 +10,7 @@ from pymongo import MongoClient
 import pdb
 from tqdm import *
 import logging
+from time import sleep
 
 logging.basicConfig(filename='model.log', format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
@@ -77,3 +78,18 @@ def save_topics(url, database, posts, texts, model, dictionary):
 
 def log(model, message):
   logging.warning(model + ": " + message)
+
+def wait_and_lock_mutex(url, database, process):
+  log(process, "Waiting for mutex...")
+  client = MongoClient(url)
+  db = client[database]
+  while db.model_event.find_one({'process': process, "free": False}):
+    sleep(3)
+  log(process, "Locked mutex")
+  db.model_event.update_one({'process': process}, {'$set': {'free': False}}, upsert=True)
+
+def unlock_mutex(url, database, process):
+  log(process, "Unlocked mutex")
+  client = MongoClient(url)
+  db = client[database]
+  db.model_event.update_one({'process': process}, {'$set': {'free': True}}, upsert=True)

@@ -73,8 +73,12 @@ def save_recommendations(recommendations, url, database):
   db.recommendation.insert_many(recommendations.to_dict('records'))
 
 def predict(events, database_url, database):
+  utils.wait_and_lock_mutex(url, database, "lda")
+  utils.wait_and_lock_mutex(url, database, "ann")
   utils.log("FFM", "Get new posts...")
   new_posts = get_new_posts(database_url, database)
+  utils.unlock_mutex(url, database, "lda")
+  utils.unlock_mutex(url, database, "ann")
   utils.log("FFM", "Get all posts...")
   posts = get_posts(database_url, database)
   utils.log("FFM", "Create dataset...")

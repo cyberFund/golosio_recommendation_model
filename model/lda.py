@@ -106,7 +106,9 @@ def run_lda(database_url, database_name):
   utils.log("LDA", "Prepare model...")
   model, dictionary = create_model(usable_texts)
   utils.log("LDA", "Save topics...")
+  utils.wait_and_lock_mutex(url, database, "lda")
   utils.save_topics(database_url, database_name, posts, texts, model, dictionary)
+  utils.unlock_mutex(url, database, "lda")
 
 if (__name__ == "__main__"):
   run_lda(sys.argv[1], sys.argv[2])

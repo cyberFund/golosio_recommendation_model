@@ -129,7 +129,7 @@ def save_document_vectors(url, database, posts, texts, model):
   for index in tqdm(posts.index):
     post = posts.loc[index]
     inferred_vector = model.infer_vector(post["prepared_body"])
-    db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'inferred_vector': inferred_vector.tolist()}})
+    db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'inferred_vector': inferred_vector.tolist()}})  
 
 def run_doc2vec(database_url, database_name):
   """
@@ -146,7 +146,9 @@ def run_doc2vec(database_url, database_name):
   utils.log("Doc2Vec", "Prepare model...")
   model = create_model(usable_texts)
   utils.log("Doc2Vec", "Save vectors...")
+  utils.wait_and_lock_mutex(url, database, "doc2vec")
   save_document_vectors(database_url, database_name, posts, texts, model)
+  utils.unlock_mutex(url, database, "doc2vec")
 
 if (__name__ == "__main__"):
   run_doc2vec(sys.argv[1], sys.argv[2])
