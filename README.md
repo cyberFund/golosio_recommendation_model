@@ -4,15 +4,10 @@ This repo contains files of recommendation system for golos.io
 
 ```
 .
-+-- similar.ann - Saved ANN model for finding similar posts
-+-- golos-corpora.dict - Saved dictionary for LDA
-+-- golos-corpora_tfidf.mm* - Saved mm index
-+-- golos.lda_model* - Saved LDA model
-+-- golos.doc2vec_model* - Saved Doc2Vec model
-+-- mappings.pkl - Saved mappings for FFM model
-+-- model.bin - Saved FFM model
++-- gdisk - tool to download first version of model from google drive 
 +-- server.py - Flask server for recommendation system
-+-- sync_comments.py - Synchronizing MongoDB with Golos node
++-- sync
+   +-- comments.py - Synchronizing MongoDB with Golos node
 +-- model
    +-- ann.py - Process of finding similar posts
    +-- lda.py - Process of finding LDA topics for each post
@@ -22,7 +17,7 @@ This repo contains files of recommendation system for golos.io
 ```
 # Installation
 
-To add tasks to cron tab:
+To add tasks to cron tab and to download first version of a model:
 ```bash
 $ install.sh DATABASE_HOST:DATABASE_PORT DATABASE_NAME
 ```
