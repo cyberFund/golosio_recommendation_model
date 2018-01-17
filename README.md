@@ -113,34 +113,28 @@ $ curl -k https://localhost:8080/recommendations?user=58158
 
 [
   {
-    "post_permlink": "@yukhimchuk/10-tipov-turistov-kotorye-ezdyat-na-ekskursii", 
-    "prediction": 0.32709062099456787
+    "post_permlink": "@tarimta/obektivnyi-marafon-etap-3", 
+    "prediction": 0.9400154948234558
   }, 
   {
-    "post_permlink": "@vp-painting/pol-gogen-vyzov-voskresnomu-khudozhniku", 
-    "prediction": 0.11999647319316864
+    "post_permlink": "@lumia/estafeta-prodolzhi-pesnyu-zadushevnaya", 
+    "prediction": 0.9309653043746948
   }, 
   {
-    "post_permlink": "@bogdych/o-proekte-golos", 
-    "prediction": 0.0844191461801529
+    "post_permlink": "@oksi969/dizain-cheloveka-lyubov-i-napravlenie-g-centr", 
+    "prediction": 0.9016984701156616
   }, 
   {
-    "post_permlink": "@vp-actionlife/gde-zvezdy-kak-blyudca-i-belye-ovcy-dorozhe", 
-    "prediction": 0.06712445616722107
+    "post_permlink": "@is-pain/vzveshennye-lyudi-or-minus-16-kilogramm-za-dva-mesyaca", 
+    "prediction": 0.8760964870452881
   }, 
   {
-    "post_permlink": "@vp-freelance/kak-frilanseru-pravilno-rabotat-s-bazoi-klientov", 
-    "prediction": 0.02885333076119423
-  }, 
-  {
-    "post_permlink": "@vp-golos-radio/pochta-radio-sila-golosa-poeziya-olgi-silaevoi-sinilga", 
-    "prediction": 0.02669009566307068
-  }, 
-  {
-    "post_permlink": "@vp-liganovi4kov/6iqonm-top-5-khoroshikh-postov-ot-avtorov-novichkov-golosa", 
-    "prediction": 0.016573332250118256
-  }
+    "post_permlink": "@miroslav/golos-photography-awards-edinstvennaya", 
+    "prediction": 0.8590876460075378
+  },
+  ...
 ]
+
 ```
 
 # Configuration
