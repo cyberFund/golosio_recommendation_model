@@ -204,12 +204,10 @@ def train(raw_events, database_url, database):
   events.to_csv("prepared_events.csv")
   # events = pd.read_csv("prepared_events.csv").drop(["Unnamed: 0"], axis=1)
 
-  utils.wait_and_lock_mutex(url, database, "lda")
-  utils.wait_and_lock_mutex(url, database, "ann")
+  utils.wait_and_lock_mutex(database_url, database, "lda")
   utils.log("FFM", "Prepare posts...")
   posts = get_posts(database_url, database)
-  utils.unlock_mutex(url, database, "lda")
-  utils.unlock_mutex(url, database, "ann")
+  utils.unlock_mutex(database_url, database, "lda")
 
   posts.to_csv("prepared_posts.csv")
   # posts = pd.read_csv("prepared_posts.csv").drop(["Unnamed: 0"], axis=1)
