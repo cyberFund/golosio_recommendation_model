@@ -8,6 +8,7 @@ This repo contains files of recommendation system for golos.io
 +-- golos-corpora.dict - Saved dictionary for LDA
 +-- golos-corpora_tfidf.mm* - Saved mm index
 +-- golos.lda_model* - Saved LDA model
++-- golos.doc2vec_model* - Saved Doc2Vec model
 +-- mappings.pkl - Saved mappings for FFM model
 +-- model.bin - Saved FFM model
 +-- server.py - Flask server for recommendation system
@@ -58,12 +59,12 @@ $ curl localhost:8080/users
 
 To get history for some user, run:
 ```bash
-$ curl localhost:8080/history?user=USER_ID
+$ curl -k https://localhost:8080/history?user=USER_ID
 ```
 
 For example:
 ```bash
-$ curl localhost:8080/history?user=58158
+$ curl -k https://localhost:8080/history?user=58158
 
 [
   "@vik/test-redaktora-dlya-botov-ot-vik-11-10", 
@@ -77,33 +78,38 @@ $ curl localhost:8080/history?user=58158
 ]
 ```
 
-To get similar posts for specified one, run:
+To get similar posts and distances to each of them for a specified one, run:
 ```bash
-$ curl localhost:8080/similar?permlink=POST_PERMLINK
+$ curl -k https://localhost:8080/similar?permlink=POST_PERMLINK
 ```
 
 For example:
 
 ```bash
-$ curl localhost:8080/similar?permlink=@mrosenquist/time-to-build-a-new-pc
+$ curl -k https://localhost:8080/similar?permlink=@gryph0n/podarochnyi-byteball
 
-[
-  "@xaliq/v-moskve-moshenniki-ukrali-15-mln-rublei-nalichnymi-pri-obmene-na-bitkoiny", 
-  "@cryptojournal/kriptofond-nextblock-global-ne-budet-vykhodit-na-ipo-iz-za-predostavleniya-lozhnykh-dannykh", 
-  "@hoanhduc/toi-deo-biet-viet-j-ca-nhe", 
-  "@gryph0n/podarochnyi-byteball", 
-  "@gayush07/bitdegree-uvlekatelnaya-obrazovatelnaya-platforma"
-]
+{
+  "@cryptojournal/bitpay-privlek-usd30-mln-v-ramkakh-finansirovaniya-serii-v": 0.0, 
+  "@cryptojournal/podrobnosti-obvala-na-krupneishei-v-mire-kriptovalyutnoi-birzhe-bitfinex": 0.0, 
+  "@ecoinmateus/relay-race11": 0.0, 
+  "@itsynergis/primer-socialnogo-blokcheina": 0.0, 
+  "@ituber/nem-obyavili-o-partnerstve-s-loyalcoin": 0.0, 
+  "@ituber/token-zcoin-dobavili-na-birzhu-bx-thailand": 0.0, 
+  "@liketerryfox/obzor-ico-57-sola-foundation-27-november-17-00-mck": 0.0, 
+  "@sibr.hus/summa-deneg-znachitelno-bolshaya-chem-mozhet-sobrat-etot-post-naidenaya-na-progulke": 0.0, 
+  "@the1arty/aventus-kakie-uslugi-vklyuchaet-v-sebya-platforma": 0.0, 
+  "@vesti/12-saitov-po-besplatnoi-razdache-altkoinov": 0.0
+}
 ```
 
 To get recommendations for specified user, run:
 ```bash
-curl localhost:8080/recommendations?user=USER_ID
+curl -k https://localhost:8080/recommendations?user=USER_ID
 ```
 
 For example:
 ```bash
-$ curl localhost:8080/recommendations?user=58158
+$ curl -k https://localhost:8080/recommendations?user=58158
 
 [
   {
