@@ -8,6 +8,7 @@ import pandas as pd
 from gensim import corpora, models
 import pdb
 from tqdm import *
+import datetime as dt
 
 WORD_LENGTH_QUANTILE = 10
 TEXT_LENGTH_QUANTILE = 66

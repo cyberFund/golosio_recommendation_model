@@ -7,6 +7,7 @@ from pymongo import MongoClient
 import pandas as pd
 from gensim import corpora, models
 import pdb
+import datetime as dt
 from tqdm import *
 
 WORD_LENGTH_QUANTILE = 10

@@ -8,6 +8,7 @@ import pdb
 from tqdm import *
 from annoy import AnnoyIndex
 from sklearn.preprocessing import quantile_transform
+import datetime as dt
 
 NUMBER_OF_TREES = 300
 NUMBER_OF_RECOMMENDATIONS = 10
