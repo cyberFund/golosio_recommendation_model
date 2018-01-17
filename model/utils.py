@@ -19,6 +19,9 @@ tokenizer = RegexpTokenizer(r'\w+')
 stemmer = Mystem()
 
 def preprocess_posts(posts, include_all_tags=False):
+  """
+    Function to add full permlink and tags for each post in dataframe extracted from mongo
+  """
   posts["post_permlink"] = "@" + posts["author"] + "/" + posts["permlink"]
   if include_all_tags:
     posts["tags"] = posts["json_metadata"].apply(lambda x: x["tags"] if (type(x) is dict and "tags" in x.keys()) else [])
@@ -28,33 +31,60 @@ def preprocess_posts(posts, include_all_tags=False):
   return posts.drop(["json_metadata", "_id"], axis=1)
 
 def topics_to_vector(topics, n_topics=100):
+  """
+    Function to convert a set of topic-probability pairs to a vector of probabilities
+  """
   vector = np.zeros(n_topics)
   for topic, probability in topics:
     vector[topic] = probability
   return vector
 
 def remove_usernames(post):
+  """
+    Function to remove usernames from a text
+  """
   return re.sub('@\w+\s', '', post)
 
 def remove_html_tags(post):
+  """
+    Function to remove html tags from a text
+  """
   return BeautifulSoup(post, "lxml").get_text()
 
 def unescape_html_tags(post):
+  """
+    Function to unescape html in a text
+  """
   return html.unescape(post)
 
 def convert_markdown(post):
+  """
+    Function to convert markdown to a html in a text
+  """
   return markdown(post)
 
 def remove_stopwords(words):
+  """
+    Function to remove stopwords from a list
+  """
   return [word for word in words if word not in stopwords_list]
 
 def split_post(post):
+  """
+    Function to tokenize post
+  """
   return tokenizer.tokenize(post)
 
 def lemmatize(words):
+  """
+    Function to lemmatize each word in a post
+  """
   return [stemmer.lemmatize(word)[0] for word in words]
 
 def prepare_post(post):
+  """
+    Function to prepare a post for LDA and Doc2Vec processes
+  """
   post = post.lower()
   post = unescape_html_tags(post)
   post = convert_markdown(post)
@@ -65,6 +95,9 @@ def prepare_post(post):
   return lemmatize(words)
 
 def save_topics(url, database, posts, texts, model, dictionary):
+  """
+    Function to save topics for each given post in a database
+  """
   client = MongoClient(url)
   db = client[database]
   posts["prepared_body"] = texts
@@ -77,9 +110,15 @@ def save_topics(url, database, posts, texts, model, dictionary):
     db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'topic': topic, 'topic_probability': topic_probability}})
 
 def log(model, message):
+  """
+    Function to print given message to a log
+  """
   logging.warning(model + ": " + message)
 
 def wait_and_lock_mutex(url, database, process):
+  """
+    Function to wait for database access for some process and to lock it then
+  """
   log(process, "Waiting for mutex...")
   client = MongoClient(url)
   db = client[database]
@@ -89,6 +128,9 @@ def wait_and_lock_mutex(url, database, process):
   db.model_event.update_one({'process': process}, {'$set': {'free': False}}, upsert=True)
 
 def unlock_mutex(url, database, process):
+  """
+    Function unlock access to a database for some process
+  """
   log(process, "Unlocked mutex")
   client = MongoClient(url)
   db = client[database]

@@ -24,6 +24,9 @@ LDA_PARAMETERS = {
 HOURS_LIMIT = 365 * 24 # Time window for analyzed posts
 
 def get_posts(url, database):
+  """
+    Function to get last posts from mongo database
+  """
   date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
   client = MongoClient(url)
   db = client[database]
@@ -46,6 +49,9 @@ def get_posts(url, database):
   return utils.preprocess_posts(posts)
 
 def remove_short_words(texts):
+  """
+    Function to remove short words from texts
+  """
   utils.log("LDA", "Find length of words...")
   word_lengths = [len(item) for sublist in tqdm(texts) for item in sublist]
   word_length_quantile = np.percentile(np.array(word_lengths), WORD_LENGTH_QUANTILE)
@@ -53,6 +59,9 @@ def remove_short_words(texts):
   return [[word for word in text if len(word) >= word_length_quantile] for text in tqdm(texts)]
 
 def remove_short_texts(texts):
+  """
+    Function to remove short texts from a corpus
+  """
   utils.log("LDA", "Find length of texts...")
   text_lengths = [len(text) for text in tqdm(texts)]
   text_length_quantile = np.percentile(np.array(text_lengths), TEXT_LENGTH_QUANTILE)
@@ -60,6 +69,9 @@ def remove_short_texts(texts):
   return [text for text in texts if len(text) >= text_length_quantile]
 
 def remove_high_frequent_words(texts):
+  """
+    Function to remove high frequent words from texts
+  """
   utils.log("LDA", "Remove high frequent words...")
   dictionary = FreqDist([item for sublist in texts for item in sublist])
   word_frequencies = list(dictionary.values())
@@ -67,6 +79,9 @@ def remove_high_frequent_words(texts):
   return [[word for word in text if dictionary[word] < high_word_frequency_quantile] for text in tqdm(texts)]
 
 def remove_low_frequent_words(texts):
+  """
+    Function to remove low frequent words from texts
+  """
   utils.log("LDA", "Remove low frequent words...")
   dictionary = FreqDist([item for sublist in texts for item in sublist])
   word_frequencies = list(dictionary.values())
@@ -74,6 +89,9 @@ def remove_low_frequent_words(texts):
   return [[word for word in text if dictionary[word] >= low_word_frequency_quantile] for text in tqdm(texts)]
 
 def prepare_posts(posts):
+  """
+    Function to prepare each post and to prepare texts for LDA algorithm
+  """
   posts = [utils.prepare_post(post) for post in tqdm(posts)]
   usable_posts = remove_short_words(posts)
   usable_posts = remove_high_frequent_words(usable_posts)
@@ -82,21 +100,33 @@ def prepare_posts(posts):
   return posts, usable_posts
 
 def create_dictionary(texts):
+  """
+    Function to create dictionary from texts
+  """
   dictionary = corpora.Dictionary(texts)
   dictionary.save('golos-corpora.dict')
   return dictionary
 
 def create_corpus(texts, dictionary):
+  """
+    Function to create corpus from texts and created dictionary
+  """
   corpus = [dictionary.doc2bow(text) for text in tqdm(texts)]
   tfidf = models.TfidfModel(corpus, id2word=dictionary, normalize=True)
   corpora.MmCorpus.serialize('golos-corpora_tfidf.mm', tfidf[corpus])
   return corpora.MmCorpus('golos-corpora_tfidf.mm')
 
 def train_model(corpus, dictionary):
+  """
+    Function to train LDA model on prepared corpus
+  """
   model = models.LdaMulticore(workers=LDA_PARAMETERS['workers'], corpus=corpus, id2word=dictionary, num_topics=LDA_PARAMETERS['topics'], passes=LDA_PARAMETERS['passes'], eta=LDA_PARAMETERS['eta'])
   return model
 
 def create_model(texts):
+  """
+    Function to create and to save LDA model
+  """
   dictionary = create_dictionary(texts)
   corpus = create_corpus(texts, dictionary)
   model = train_model(corpus, dictionary)
@@ -104,6 +134,13 @@ def create_model(texts):
   return model, dictionary
 
 def run_lda(database_url, database_name):
+  """
+    Function to run LDA process:
+    - Get all posts from mongo
+    - Prepare post bodies
+    - Create LDA model
+    - Find and save LDA topics for each model
+  """
   utils.log("LDA", "Get posts...")
   posts = get_posts(database_url, database_name)
   utils.log("LDA", "Prepare posts...")

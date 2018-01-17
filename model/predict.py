@@ -15,6 +15,9 @@ USERS_POSTS_LIMIT = 100 # Max number of recommendations
 HOURS_LIMIT = 365 * 24 # Time window for recommended posts
 
 def get_new_posts(url, database):
+  """
+    Function to get last posts from mongo database
+  """
   date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
   posts = pd.DataFrame()
   client = MongoClient(url)
@@ -41,10 +44,13 @@ def get_new_posts(url, database):
   return utils.preprocess_posts(posts)
 
 def create_dataset(posts, events):
+  """
+    Function to generate pairs with posts similar to viewed for each user
+  """
   posts = posts.set_index("post_permlink")
   dataset = pd.DataFrame(columns=["user_id", "post_permlink"])
   for user in tqdm(events["user_id"].unique()):
-    user_events = events[(events["user_id"] == user) & (events["like"] > 0.5)] 
+    user_events = events[(events["user_id"] == user) & (events["like"] > 0.5)]  # Use only views and comments
     similar_posts = [posts.loc[post]["similar_posts"] for post in user_events["post_permlink"] if post in posts.index]
     similar_posts = [post for posts in similar_posts for post in posts]
     similar_distances = [posts.loc[post]["similar_distances"] for post in user_events["post_permlink"] if post in posts.index]
@@ -73,14 +79,23 @@ def save_recommendations(recommendations, url, database):
   db.recommendation.insert_many(recommendations.to_dict('records'))
 
 def predict(events, database_url, database):
+  """
+    Function to run prediction process:
+    - Get all posts in a model
+    - Get only new posts
+    - Generate pairs with similar posts for each user
+    - Load a model from disk
+    - Get FFM predictions
+    - Save recommendations to a mongo database
+  """
   utils.wait_and_lock_mutex(database_url, database, "lda")
   utils.wait_and_lock_mutex(database_url, database, "ann")
   utils.log("FFM", "Get new posts...")
   new_posts = get_new_posts(database_url, database)
-  utils.unlock_mutex(database_url, database, "lda")
-  utils.unlock_mutex(database_url, database, "ann")
   utils.log("FFM", "Get all posts...")
   posts = get_posts(database_url, database)
+  utils.unlock_mutex(database_url, database, "lda")
+  utils.unlock_mutex(database_url, database, "ann")
   utils.log("FFM", "Create dataset...")
   dataset = create_dataset(new_posts, events)
   utils.log("FFM", "Extend events...")
