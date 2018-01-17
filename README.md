@@ -4,14 +4,10 @@ This repo contains files of recommendation system for golos.io
 
 ```
 .
-+-- similar.ann - Saved ANN model for finding similar posts
-+-- golos-corpora.dict - Saved dictionary for LDA
-+-- golos-corpora_tfidf.mm* - Saved mm index
-+-- golos.lda_model* - Saved LDA model
-+-- mappings.pkl - Saved mappings for FFM model
-+-- model.bin - Saved FFM model
++-- gdisk - tool to download first version of model from google drive 
 +-- server.py - Flask server for recommendation system
-+-- sync_comments.py - Synchronizing MongoDB with Golos node
++-- sync
+   +-- comments.py - Synchronizing MongoDB with Golos node
 +-- model
    +-- ann.py - Process of finding similar posts
    +-- lda.py - Process of finding LDA topics for each post
@@ -21,7 +17,7 @@ This repo contains files of recommendation system for golos.io
 ```
 # Installation
 
-To add tasks to cron tab:
+To add tasks to cron tab and to download first version of a model:
 ```bash
 $ install.sh DATABASE_HOST:DATABASE_PORT DATABASE_NAME
 ```
@@ -40,6 +36,11 @@ $ uninstall.sh
 Recommendation model architecture: ![Recommendation model architecture](architecture.png)
 
 # How to use it
+To synchronize mongo database with golos.io blockchain, run:
+```bash
+$ cd ./sync
+$ python3 ./sync_comments.py
+```
 
 To start server, run:
 ```bash
@@ -53,17 +54,17 @@ $ run.sh localhost:27017 steemdb_1
 
 To get supported user ids, run
 ```bash
-$ curl localhost:8080/users
+$ curl -k https://localhost:8080/users
 ```
 
 To get history for some user, run:
 ```bash
-$ curl localhost:8080/history?user=USER_ID
+$ curl -k https://localhost:8080/history?user=USER_ID
 ```
 
 For example:
 ```bash
-$ curl localhost:8080/history?user=58158
+$ curl -k https://localhost:8080/history?user=58158
 
 [
   "@vik/test-redaktora-dlya-botov-ot-vik-11-10", 
@@ -77,64 +78,63 @@ $ curl localhost:8080/history?user=58158
 ]
 ```
 
-To get similar posts for specified one, run:
+To get similar posts and distances to each of them for a specified one, run:
 ```bash
-$ curl localhost:8080/similar?permlink=POST_PERMLINK
+$ curl -k https://localhost:8080/similar?permlink=POST_PERMLINK
 ```
 
 For example:
 
 ```bash
-$ curl localhost:8080/similar?permlink=@mrosenquist/time-to-build-a-new-pc
+$ curl -k https://localhost:8080/similar?permlink=@gryph0n/podarochnyi-byteball
 
-[
-  "@xaliq/v-moskve-moshenniki-ukrali-15-mln-rublei-nalichnymi-pri-obmene-na-bitkoiny", 
-  "@cryptojournal/kriptofond-nextblock-global-ne-budet-vykhodit-na-ipo-iz-za-predostavleniya-lozhnykh-dannykh", 
-  "@hoanhduc/toi-deo-biet-viet-j-ca-nhe", 
-  "@gryph0n/podarochnyi-byteball", 
-  "@gayush07/bitdegree-uvlekatelnaya-obrazovatelnaya-platforma"
-]
+{
+  "@cryptojournal/bitpay-privlek-usd30-mln-v-ramkakh-finansirovaniya-serii-v": 0.0, 
+  "@cryptojournal/podrobnosti-obvala-na-krupneishei-v-mire-kriptovalyutnoi-birzhe-bitfinex": 0.0, 
+  "@ecoinmateus/relay-race11": 0.0, 
+  "@itsynergis/primer-socialnogo-blokcheina": 0.0, 
+  "@ituber/nem-obyavili-o-partnerstve-s-loyalcoin": 0.0, 
+  "@ituber/token-zcoin-dobavili-na-birzhu-bx-thailand": 0.0, 
+  "@liketerryfox/obzor-ico-57-sola-foundation-27-november-17-00-mck": 0.0, 
+  "@sibr.hus/summa-deneg-znachitelno-bolshaya-chem-mozhet-sobrat-etot-post-naidenaya-na-progulke": 0.0, 
+  "@the1arty/aventus-kakie-uslugi-vklyuchaet-v-sebya-platforma": 0.0, 
+  "@vesti/12-saitov-po-besplatnoi-razdache-altkoinov": 0.0
+}
 ```
 
 To get recommendations for specified user, run:
 ```bash
-curl localhost:8080/recommendations?user=USER_ID
+curl -k https://localhost:8080/recommendations?user=USER_ID
 ```
 
 For example:
 ```bash
-$ curl localhost:8080/recommendations?user=58158
+$ curl -k https://localhost:8080/recommendations?user=58158
 
 [
   {
-    "post_permlink": "@yukhimchuk/10-tipov-turistov-kotorye-ezdyat-na-ekskursii", 
-    "prediction": 0.32709062099456787
+    "post_permlink": "@tarimta/obektivnyi-marafon-etap-3", 
+    "prediction": 0.9400154948234558
   }, 
   {
-    "post_permlink": "@vp-painting/pol-gogen-vyzov-voskresnomu-khudozhniku", 
-    "prediction": 0.11999647319316864
+    "post_permlink": "@lumia/estafeta-prodolzhi-pesnyu-zadushevnaya", 
+    "prediction": 0.9309653043746948
   }, 
   {
-    "post_permlink": "@bogdych/o-proekte-golos", 
-    "prediction": 0.0844191461801529
+    "post_permlink": "@oksi969/dizain-cheloveka-lyubov-i-napravlenie-g-centr", 
+    "prediction": 0.9016984701156616
   }, 
   {
-    "post_permlink": "@vp-actionlife/gde-zvezdy-kak-blyudca-i-belye-ovcy-dorozhe", 
-    "prediction": 0.06712445616722107
+    "post_permlink": "@is-pain/vzveshennye-lyudi-or-minus-16-kilogramm-za-dva-mesyaca", 
+    "prediction": 0.8760964870452881
   }, 
   {
-    "post_permlink": "@vp-freelance/kak-frilanseru-pravilno-rabotat-s-bazoi-klientov", 
-    "prediction": 0.02885333076119423
-  }, 
-  {
-    "post_permlink": "@vp-golos-radio/pochta-radio-sila-golosa-poeziya-olgi-silaevoi-sinilga", 
-    "prediction": 0.02669009566307068
-  }, 
-  {
-    "post_permlink": "@vp-liganovi4kov/6iqonm-top-5-khoroshikh-postov-ot-avtorov-novichkov-golosa", 
-    "prediction": 0.016573332250118256
-  }
+    "post_permlink": "@miroslav/golos-photography-awards-edinstvennaya", 
+    "prediction": 0.8590876460075378
+  },
+  ...
 ]
+
 ```
 
 # Configuration
