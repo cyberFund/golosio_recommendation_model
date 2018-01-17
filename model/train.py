@@ -21,6 +21,7 @@ MODEL_PARAMETERS = {
 
 ITERATIONS = 10
 WORKERS = 13
+HOURS_LIMIT = 365 * 24 # Time window for analyzed posts
 
 def parse_refurl(url):
   return "/".join(url.split("/")[4:])
@@ -29,10 +30,13 @@ def parse_recommendations(urls):
   return ["@" + url[1:-1] for url in urls[1:-1].split(",") if len(url) > 0]
 
 def get_raw_events(url, database): 
+  date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
   client = MongoClient(url) 
   db = client[database] 
   events = pd.DataFrame(list(db.event.find( 
-    {}, { 
+    {
+      'created_at': {'$gte': date}
+    }, { 
       'event_type': 1,  
       'value' : 1, 
       'user_id' : 1, 

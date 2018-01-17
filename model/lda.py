@@ -20,13 +20,17 @@ LDA_PARAMETERS = {
   'eta': 0.25
 }
 
+HOURS_LIMIT = 365 * 24 # Time window for analyzed posts
+
 def get_posts(url, database):
+  date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
   client = MongoClient(url)
   db = client[database]
   posts = pd.DataFrame(list(db.comment.find(
     {
       'permlink' : {'$exists' : True},
       'depth': 0,
+      'created': {'$gte': date}
     }, {
       'permlink': 1,
       'author': 1, 

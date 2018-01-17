@@ -13,10 +13,13 @@ NUMBER_OF_TREES = 300
 NUMBER_OF_RECOMMENDATIONS = 10
 NUMBER_OF_VALUES = 500
 
+HOURS_LIMIT = 365 * 24 # Time window for analyzed posts
+
 def get_posts(url, database):
   """
-    Function to get posts with defined inferred vector and topic from mongo database
+    Function to get last posts with defined inferred vector and topic from mongo database
   """
+  date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
   client = MongoClient(url)
   db = client[database]
   posts = pd.DataFrame(list(db.comment.find(
@@ -25,6 +28,7 @@ def get_posts(url, database):
       'inferred_vector' : {'$exists' : True},
       'topic' : {'$exists' : True},
       'depth': 0,
+      'created': {'$gte': date}
     }, {
       'permlink': 1,
       'author': 1,
