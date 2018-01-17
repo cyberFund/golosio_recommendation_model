@@ -54,7 +54,7 @@ $ run.sh localhost:27017 steemdb_1
 
 To get supported user ids, run
 ```bash
-$ curl localhost:8080/users
+$ curl -k https://localhost:8080/users
 ```
 
 To get history for some user, run:
