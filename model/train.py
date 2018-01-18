@@ -25,12 +25,21 @@ WORKERS = 13
 HOURS_LIMIT = 365 * 24 # Time window for analyzed posts
 
 def parse_refurl(url):
+  """
+    Function to fix refurls in events
+  """
   return "/".join(url.split("/")[4:])
 
 def parse_recommendations(urls):
+  """
+    Function to parse arrays with recommendations for each event
+  """
   return ["@" + url[1:-1] for url in urls[1:-1].split(",") if len(url) > 0]
 
 def get_raw_events(url, database): 
+  """
+    Function to get latest events from a database
+  """
   date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
   client = MongoClient(url) 
   db = client[database] 
@@ -49,12 +58,18 @@ def get_raw_events(url, database):
   return events 
 
 def prepare_raw_events(raw_events):
+  """
+    Function to fix some problems with events after mysql export
+  """
   raw_events["refurl"] = raw_events["refurl"].astype(str)
   raw_events["value"] = raw_events["value"].astype(str)
   raw_events["user_id"].fillna("\\N", inplace=True)
   return raw_events[raw_events["user_id"].astype(str) != "\\N"]
 
 def get_user_events(raw_events):
+  """
+    Function to generate csv file with recommendations, views, votes and comments lists for each user
+  """
   user_events = pd.DataFrame(columns=["user", "recommendations", "views", "votes", "comments"])
   users = raw_events["user_id"].unique()
   users_raw_events = raw_events.groupby("user_id")
@@ -77,6 +92,9 @@ def get_user_events(raw_events):
   return user_events
 
 def get_posts(url, database):
+  """
+    Function to get all posts from a database
+  """
   client = MongoClient(url)
   db = client[database]
   posts = pd.DataFrame(list(db.comment.find(
@@ -97,6 +115,13 @@ def get_posts(url, database):
   return utils.preprocess_posts(posts)
 
 def get_coefficient(user_events, user, post):
+  """
+    Function to find a coefficient for each user-post pair
+      - Comment - 1
+      - View without comment - 0.7
+      - Recommendation without view - -1
+      - Other - 0
+  """
   if user not in user_events.index:
     return 0
   user_event = user_events.loc[user]
@@ -110,6 +135,9 @@ def get_coefficient(user_events, user, post):
     return 0
 
 def get_events(user_events):
+  """
+    Function to generate user-post pairs with a coefficient depending on user sympathy to this post
+  """
   events = pd.DataFrame()
   users = []
   posts = []
@@ -129,6 +157,10 @@ def get_events(user_events):
   return events
 
 def extend_events(events, posts):
+  """
+    Function to extend each event with a post columns
+    Uses quantile transform for numeric features like post popularity or event time
+  """
   posts = posts.set_index("post_permlink")
   posts["created"] = pd.to_datetime(posts["created"])
   events = events.set_index("post_permlink")
@@ -143,6 +175,9 @@ def extend_events(events, posts):
   return events
 
 def create_mapping(series):
+  """
+    Function to create integer mapping for each unique value in a given series
+  """
   series = series.fillna("")
   mapping = {}
   for (idx, mid) in enumerate(np.unique(series)):
@@ -150,6 +185,9 @@ def create_mapping(series):
   return mapping
 
 def create_ffm_row(mapping, event):
+  """
+    Function to create row of dataset in a format for FFM model (See here https://github.com/alexeygrigorev/libffm-python) 
+  """
   return [
     (0, mapping["uid_to_idx"].get(event["user_id"], max(mapping["uid_to_idx"].values()) + 1), 1),
     (1, mapping["pid_to_idx"].get(event["post_permlink"], max(mapping["pid_to_idx"].values()) + 1), 1),
@@ -163,6 +201,10 @@ def create_ffm_row(mapping, event):
   ]
 
 def create_ffm_dataset(events, mapping=None):
+  """
+    Function to create dataset for each event
+    Comments and views are positive samples, everything else are negatives
+  """
   if not mapping:
     mapping = {}
     mapping["uid_to_idx"] = create_mapping(events["user_id"])
@@ -177,9 +219,12 @@ def create_ffm_dataset(events, mapping=None):
   distributed_events = dd.from_pandas(events, npartitions=WORKERS)
   events = events.set_index("index")
   result = distributed_events["index"].apply(lambda x: create_ffm_row(mapping, events.loc[x])).compute()
-  return mapping, result, (events["like"] == 1).tolist()
+  return mapping, result, (events["like"] > 0.5).tolist()
 
 def build_model(train_X, train_y, test_X, test_y):
+  """
+    Function to build and to train model from given train and test dataset
+  """
   train_ffm_data = ffm.FFMData(train_X, train_y)
   test_ffm_data = ffm.FFMData(test_X, test_y)
 
@@ -190,7 +235,17 @@ def build_model(train_X, train_y, test_X, test_y):
     model.iteration(train_ffm_data)
   return model, roc_auc_score(train_y, model.predict(train_ffm_data)), roc_auc_score(test_y, model.predict(test_ffm_data))
 
+@utils.error_log("FFM")
 def train(raw_events, database_url, database):
+  """
+    Function to train FFM model
+    - Get all events from mongo database
+    - Convert them to a set of unique user-post pairs with a coefficient depending on user sympathy
+    - Extend events with a posts info
+    - Convert events to a format for FFM algorithm
+    - Build model with chosen train and test set
+    - Save trained model
+  """
   utils.log("FFM", "Prepare raw events...")
   raw_events = prepare_raw_events(raw_events)
   utils.log("FFM", "Prepare user events...")

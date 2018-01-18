@@ -129,6 +129,7 @@ def save_similar_posts(url, database, posts, vectors, model):
     similar_posts = posts.loc[similar_indices]["post_permlink"].tolist()
     db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'similar_posts': similar_posts, 'similar_distances': similar_distances}})
 
+@utils.error_log("ANN")
 def run_ann(database_url, database_name):
   """
     Function to run ANN process:
