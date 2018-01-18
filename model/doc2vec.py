@@ -136,6 +136,7 @@ def save_document_vectors(url, database, posts, texts, model):
     inferred_vector = model.infer_vector(post["prepared_body"])
     db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'inferred_vector': inferred_vector.tolist()}})  
 
+@utils.error_log("Doc2Vec")
 def run_doc2vec(database_url, database_name):
   """
     Function to run Doc2Vec process:

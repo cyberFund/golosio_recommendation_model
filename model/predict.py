@@ -78,6 +78,7 @@ def save_recommendations(recommendations, url, database):
   db.recommendation.drop()
   db.recommendation.insert_many(recommendations.to_dict('records'))
 
+@utils.error_log("FFM")
 def predict(events, database_url, database):
   """
     Function to run prediction process:

@@ -11,6 +11,7 @@ import pdb
 from tqdm import *
 import logging
 from time import sleep
+from functools import wraps
 
 logging.basicConfig(filename='model.log', format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
@@ -115,9 +116,23 @@ def log(model, message):
   """
   logging.warning(model + ": " + message)
 
+def error_log(model):
+  def error_log_decorator(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+      try:
+        f(*args, **kwargs)
+      except Exception as e:
+        log(model, "An exception appeared")
+        logging.exception(e)
+      else:
+        log(model, "Finished successfully")
+    return wrapper
+  return error_log_decorator
+
 def wait_and_lock_mutex(url, database, process):
   """
-    Function to wait for database access for some process and to lock it then
+    Function to wait for database access for some process and to lock it0 then
   """
   log(process, "Waiting for mutex...")
   client = MongoClient(url)

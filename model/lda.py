@@ -133,6 +133,7 @@ def create_model(texts):
   model.save('golos.lda_model')
   return model, dictionary
 
+@utils.error_log("LDA")
 def run_lda(database_url, database_name):
   """
     Function to run LDA process:

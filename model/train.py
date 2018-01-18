@@ -235,6 +235,7 @@ def build_model(train_X, train_y, test_X, test_y):
     model.iteration(train_ffm_data)
   return model, roc_auc_score(train_y, model.predict(train_ffm_data)), roc_auc_score(test_y, model.predict(test_ffm_data))
 
+@utils.error_log("FFM")
 def train(raw_events, database_url, database):
   """
     Function to train FFM model
