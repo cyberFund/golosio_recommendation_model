@@ -45,6 +45,7 @@ def get_posts(url, database):
       'created': 1,
       'json_metadata': 1,
       'body': 1,
+      'prepared_body': 1
     }
   )))
   return utils.preprocess_posts(posts)
@@ -93,7 +94,7 @@ def prepare_posts(posts):
   """
     Function to prepare each post and to prepare texts for Doc2Vec algorithm
   """
-  posts = [utils.prepare_post(post) for post in tqdm(posts)]
+  posts = [utils.prepare_post(posts.loc[index]) for index in tqdm(posts.index)]
   posts = remove_short_words(posts)
   posts = remove_high_frequent_words(posts)
   posts = remove_low_frequent_words(posts)
@@ -148,7 +149,7 @@ def run_doc2vec(database_url, database_name):
   utils.log("Doc2Vec", "Get posts...")
   posts = get_posts(database_url, database_name)
   utils.log("Doc2Vec", "Prepare posts...")
-  texts, usable_texts = prepare_posts(posts["body"])
+  texts, usable_texts = prepare_posts(posts)
   utils.log("Doc2Vec", "Prepare model...")
   model = create_model(usable_texts)
   utils.log("Doc2Vec", "Save vectors...")

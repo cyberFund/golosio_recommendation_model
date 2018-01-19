@@ -86,7 +86,9 @@ def prepare_post(post):
   """
     Function to prepare a post for LDA and Doc2Vec processes
   """
-  post = post.lower()
+  if ("prepared_body" in post) and (post["prepared_body"]):
+    return post["prepared_body"]
+  post = post["body"].lower()
   post = unescape_html_tags(post)
   post = convert_markdown(post)
   post = remove_html_tags(post)
@@ -108,7 +110,7 @@ def save_topics(url, database, posts, texts, model, dictionary):
     vector = topics_to_vector(post_topics, n_topics=100)
     topic = int(np.argmax(vector))
     topic_probability = float(np.max(vector))
-    db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'topic': topic, 'topic_probability': topic_probability}})
+    db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'topic': topic, 'topic_probability': topic_probability, 'prepared_body': post["prepared_body"]}})
 
 def log(model, message):
   """

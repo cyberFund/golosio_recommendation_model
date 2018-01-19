@@ -44,6 +44,7 @@ def get_posts(url, database):
       'created': 1,
       'json_metadata': 1,
       'body': 1,
+      'prepared_body': 1
     }
   )))
   return utils.preprocess_posts(posts)
@@ -92,7 +93,7 @@ def prepare_posts(posts):
   """
     Function to prepare each post and to prepare texts for LDA algorithm
   """
-  posts = [utils.prepare_post(post) for post in tqdm(posts)]
+  posts = [utils.prepare_post(posts.loc[index]) for index in tqdm(posts.index)]
   usable_posts = remove_short_words(posts)
   usable_posts = remove_high_frequent_words(usable_posts)
   usable_posts = remove_low_frequent_words(usable_posts)
@@ -145,7 +146,7 @@ def run_lda(database_url, database_name):
   utils.log("LDA", "Get posts...")
   posts = get_posts(database_url, database_name)
   utils.log("LDA", "Prepare posts...")
-  texts, usable_texts = prepare_posts(posts["body"])
+  texts, usable_texts = prepare_posts(posts)
   utils.log("LDA", "Prepare model...")
   model, dictionary = create_model(usable_texts)
   utils.log("LDA", "Save topics...")
