@@ -145,7 +145,7 @@ def run_lda(database_url, database_name):
   utils.log("LDA", "Get posts...")
   posts = get_posts(database_url, database_name)
   utils.log("LDA", "Prepare posts...")
-  texts, usable_texts = prepare_posts(posts["body"])
+  texts, usable_texts = prepare_posts(posts)
   utils.log("LDA", "Prepare model...")
   model, dictionary = create_model(usable_texts)
   utils.log("LDA", "Save topics...")

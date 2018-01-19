@@ -148,7 +148,7 @@ def run_doc2vec(database_url, database_name):
   utils.log("Doc2Vec", "Get posts...")
   posts = get_posts(database_url, database_name)
   utils.log("Doc2Vec", "Prepare posts...")
-  texts, usable_texts = prepare_posts(posts["body"])
+  texts, usable_texts = prepare_posts(posts)
   utils.log("Doc2Vec", "Prepare model...")
   model = create_model(usable_texts)
   utils.log("Doc2Vec", "Save vectors...")
