@@ -1,3 +1,3 @@
-like,user_id,post_permlink,author,parent_permlink,first_tag,last_tag,topic,topic_probability,time_coefficient,popularity_coefficient
-0,13,somepost,someauthor,somelink,tag1,tag2,0,0.9,0.8,0.6
-1,12,someotherpost,someanotherauthor,somelink,tag2,tag4,1,0.1,0.2,0.4
+version https://git-lfs.github.com/spec/v1
+oid sha256:37c5d3366998c274ad40dc5e8fd108ce7a7ff27e126663cce603e712b9fd58f6
+size 261

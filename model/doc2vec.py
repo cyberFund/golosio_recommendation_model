@@ -12,17 +12,19 @@ from tqdm import *
 
 WORD_LENGTH_QUANTILE = 10
 TEXT_LENGTH_QUANTILE = 66
-HIGH_WORD_FREQUENCY_QUANTILE = 99
+HIGH_WORD_FREQUENCY_QUANTILE = 99.5
 LOW_WORD_FREQUENCY_QUANTILE = 60
 NUMBER_OF_RECOMMENDATIONS = 10
 DOC2VEC_PARAMETERS = {
-  'size': 100,
-  'window': 8,
+  'size': 300,
+  'window': 20,
   'min_count': 5,
   'workers': 13
 }
+DOC2VEC_STEPS = 2500
+DOC2VEC_ALPHA = 0.03
 
-HOURS_LIMIT = 365 * 24 # Time window for analyzed posts
+HOURS_LIMIT = 7* 24 # Time window for analyzed posts
 
 def get_posts(url, database):
   """
@@ -134,7 +136,7 @@ def save_document_vectors(url, database, posts, texts, model):
   posts["prepared_body"] = texts
   for index in tqdm(posts.index):
     post = posts.loc[index]
-    inferred_vector = model.infer_vector(post["prepared_body"])
+    inferred_vector = model.infer_vector(post["prepared_body"], steps=DOC2VEC_STEPS, alpha=DOC2VEC_ALPHA)
     db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'inferred_vector': inferred_vector.tolist()}})  
 
 @utils.error_log("Doc2Vec")
