@@ -39,8 +39,6 @@ def get_posts(url, database):
     }, {
       'permlink': 1,
       'author': 1, 
-      'topic' : 1,
-      'topic_probability' : 1,
       'parent_permlink': 1,
       'created': 1,
       'json_metadata': 1,

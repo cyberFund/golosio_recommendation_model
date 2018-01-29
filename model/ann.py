@@ -10,31 +10,28 @@ from annoy import AnnoyIndex
 from sklearn.preprocessing import quantile_transform
 import datetime as dt
 
-NUMBER_OF_TREES = 300
+NUMBER_OF_TREES = 5000
 NUMBER_OF_RECOMMENDATIONS = 10
 NUMBER_OF_VALUES = 500
 
-HOURS_LIMIT = 365 * 24 # Time window for analyzed posts
+HOURS_LIMIT = 7 * 24 # Time window for analyzed posts
 
 def get_posts(url, database):
   """
     Function to get last posts with defined inferred vector and topic from mongo database
   """
-  date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
+  date = utils.get_last_post_date(url, database) - dt.timedelta(hours=HOURS_LIMIT)
   client = MongoClient(url)
   db = client[database]
   posts = pd.DataFrame(list(db.comment.find(
     {
       'permlink' : {'$exists' : True},
       'inferred_vector' : {'$exists' : True},
-      'topic' : {'$exists' : True},
       'depth': 0,
       'created': {'$gte': date}
     }, {
       'permlink': 1,
       'author': 1,
-      'topic' : 1,
-      'topic_probability' : 1,
       'inferred_vector': 1,
       'parent_permlink': 1,
       'created': 1,
@@ -59,7 +56,7 @@ def convert_categorical(posts):
   """
     Function to one-hot encode categorical columns with only popular values
   """
-  categorical_columns = ["author", "parent_permlink", "topic"]
+  categorical_columns = ["author", "parent_permlink"]
   for column in categorical_columns:
     all_values, value_counts = np.unique(posts[column].tolist(), return_counts=True)
     popular_values = all_values[np.argsort(-value_counts)][0:NUMBER_OF_VALUES]
