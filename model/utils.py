@@ -6,7 +6,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 from pymystem3 import Mystem
 import numpy as np
-from pymongo import MongoClient
+from pymongo import MongoClient, DESCENDING
 import pdb
 from tqdm import *
 import logging
@@ -18,6 +18,19 @@ logging.basicConfig(filename='model.log', format='%(asctime)s %(message)s', date
 stopwords_list = stopwords.words('russian')
 tokenizer = RegexpTokenizer(r'\w+')
 stemmer = Mystem()
+
+def get_last_post_date(url, database):
+  client = MongoClient(url)
+  db = client[database]
+  last_post = db.comment.find(
+    {
+      'permlink' : {'$exists' : True},
+      'depth': 0,
+    }, {
+      'created': 1,
+    }
+  ).sort([("created", DESCENDING)]).limit(1)[0]
+  return last_post['created']
 
 def preprocess_posts(posts, include_all_tags=False):
   """
