@@ -22,13 +22,13 @@ DOC2VEC_PARAMETERS = {
   'workers': 13
 }
 
-HOURS_LIMIT = 365 * 24 # Time window for analyzed posts
+HOURS_LIMIT = 7 * 24 # Time window for analyzed posts
 
 def get_posts(url, database):
   """
     Function to get last posts from mongo database
   """
-  date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
+  date = utils.get_last_post_date(url, database) - dt.timedelta(hours=HOURS_LIMIT)
   client = MongoClient(url)
   db = client[database]
   posts = pd.DataFrame(list(db.comment.find(
