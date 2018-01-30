@@ -22,7 +22,7 @@ MODEL_PARAMETERS = {
 
 ITERATIONS = 10
 WORKERS = 13
-HOURS_LIMIT = 365 * 24 # Time window for analyzed posts
+HOURS_LIMIT = 14 * 24 # Time window for analyzed posts
 
 def parse_refurl(url):
   """
@@ -40,7 +40,7 @@ def get_raw_events(url, database):
   """
     Function to get latest events from a database
   """
-  date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
+  date = utils.get_last_event_date(url, database) - dt.timedelta(hours=HOURS_LIMIT)
   client = MongoClient(url) 
   db = client[database] 
   events = pd.DataFrame(list(db.event.find( 
@@ -101,12 +101,9 @@ def get_posts(url, database):
     {
       'permlink' : {'$exists' : True},
       'depth': 0,
-      'topic': {'$exists' : True},
     }, {
       'permlink': 1,
       'author': 1, 
-      'topic' : 1,
-      'topic_probability' : 1,
       'parent_permlink': 1,
       'created': 1,
       'json_metadata': 1
@@ -167,11 +164,7 @@ def extend_events(events, posts):
   popularity = events.groupby("post_permlink").count()
   popularity["popularity"] = popularity["like"]
   events = events.join(posts).join(popularity[["popularity"]]).reset_index()
-  events["topic"] = events["topic"].fillna(0).astype(int)
-  events["topic_probability"] = events["topic_probability"].fillna(0)
   events["popularity_coefficient"] = quantile_transform(events["popularity"].values.reshape(-1, 1), output_distribution="normal", copy=True).reshape(-1)
-  events["time"] = events["created"].apply(lambda x: x.value)
-  events["time_coefficient"] = quantile_transform(events["time"].fillna(events["time"].median()).values.reshape(-1, 1), output_distribution="normal", copy=True).reshape(-1)
   return events
 
 def create_mapping(series):
@@ -195,9 +188,7 @@ def create_ffm_row(mapping, event):
     (3, mapping["parid_to_idx"].get(event["parent_permlink"], max(mapping["parid_to_idx"].values()) + 1), 1),
     (4, mapping["ftgid_to_idx"].get(event["first_tag"], max(mapping["ftgid_to_idx"].values()) + 1), 1),
     (5, mapping["ltgid_to_idx"].get(event["last_tag"], max(mapping["ltgid_to_idx"].values()) + 1), 1),
-    (6, event["topic"], event["topic_probability"]),
-    (7, 1, event["time_coefficient"]),
-    (8, 1, event["popularity_coefficient"]),
+    (6, 1, event["popularity_coefficient"]),
   ]
 
 def create_ffm_dataset(events, mapping=None):
@@ -219,7 +210,7 @@ def create_ffm_dataset(events, mapping=None):
   distributed_events = dd.from_pandas(events, npartitions=WORKERS)
   events = events.set_index("index")
   result = distributed_events["index"].apply(lambda x: create_ffm_row(mapping, events.loc[x])).compute()
-  return mapping, result, (events["like"] > 0.5).tolist()
+  return mapping, result, (events["like"] >= 0.7).tolist()
 
 def build_model(train_X, train_y, test_X, test_y):
   """

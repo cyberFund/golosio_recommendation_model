@@ -32,6 +32,18 @@ def get_last_post_date(url, database):
   ).sort([("created", DESCENDING)]).limit(1)[0]
   return last_post['created']
 
+def get_last_event_date(url, database):
+  client = MongoClient(url)
+  db = client[database]
+  last_event = db.event.find(
+    {
+    }, {
+      'created_at': 1,
+    }
+  ).sort([("created_at", DESCENDING)]).limit(1)[0]
+  return last_post['created_at']
+
+
 def preprocess_posts(posts, include_all_tags=False):
   """
     Function to add full permlink and tags for each post in dataframe extracted from mongo
