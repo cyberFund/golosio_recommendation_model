@@ -9,6 +9,7 @@ This repo contains files of recommendation system for golos.io
 +-- sync
    +-- comments.py - Synchronizing MongoDB with Golos node
 +-- model
+   +-- utils.py - Helpers for preprocessing, processes regulation and etc.
    +-- ann.py - Process of finding similar posts
    +-- lda.py - Process of finding LDA topics for each post
    +-- doc2vec.py - Process of finding doc2vec vectors for each post
@@ -16,6 +17,8 @@ This repo contains files of recommendation system for golos.io
    +-- predict.py - Process of creating predictions
 ```
 # Installation
+
+Install LibFFM before usage. Instruction can be found here: https://github.com/alexeygrigorev/libffm-python
 
 To add tasks to cron tab and to download first version of a model:
 ```bash
