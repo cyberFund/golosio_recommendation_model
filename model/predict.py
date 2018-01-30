@@ -26,14 +26,11 @@ def get_new_posts(url, database):
     {
       'permlink' : {'$exists' : True},
       'depth': 0,
-      'topic': {'$exists' : True},
       'similar_posts': {'$exists' : True},
       'created': {'$gte': date}
     }, {
       'permlink': 1,
       'author': 1, 
-      'topic' : 1,
-      'topic_probability' : 1,
       'parent_permlink': 1,
       'created': 1,
       'json_metadata': 1,
