@@ -1,3 +1,11 @@
+numpy
+pymongo
+tqdm
+annoy
+sklearn
+dask
+bs4
+markdown
 gensim
 tensorflow
 keras
