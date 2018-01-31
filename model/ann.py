@@ -10,11 +10,11 @@ from annoy import AnnoyIndex
 from sklearn.preprocessing import quantile_transform
 import datetime as dt
 
-NUMBER_OF_TREES = 5000
+NUMBER_OF_TREES = 1000
 NUMBER_OF_RECOMMENDATIONS = 10
 NUMBER_OF_VALUES = 1000
 
-HOURS_LIMIT = 7 * 24 # Time window for analyzed posts
+HOURS_LIMIT = 14 * 24 # Time window for analyzed posts
 
 def get_posts(url, database):
   """
@@ -144,7 +144,6 @@ def run_ann(database_url, database_name):
   utils.log("ANN", "Prepare posts...")
   vectors = prepare_posts(posts)
   vectors.to_csv("./vectors.csv")
-  vectors = pd.read_csv("./vectors.csv")
   utils.log("ANN", "Prepare model...")
   model = create_model(vectors)
   utils.log("ANN", "Train model...")

@@ -41,7 +41,7 @@ def get_last_event_date(url, database):
       'created_at': 1,
     }
   ).sort([("created_at", DESCENDING)]).limit(1)[0]
-  return last_post['created_at']
+  return last_event['created_at']
 
 
 def preprocess_posts(posts, include_all_tags=False):

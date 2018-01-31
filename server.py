@@ -58,9 +58,9 @@ def similar():
     }
   )
   if comment:
-    return jsonify(dict(zip(comment["similar_posts"], comment["similar_distances"])))
+    return jsonify(list(zip(comment["similar_posts"], comment["similar_distances"])))
   else:
-    return jsonify({})
+    return jsonify([])
 
 if __name__ == '__main__':
   config(app)

@@ -24,7 +24,7 @@ DOC2VEC_PARAMETERS = {
 DOC2VEC_STEPS = 2500
 DOC2VEC_ALPHA = 0.03
 
-HOURS_LIMIT = 7 * 24 # Time window for analyzed posts
+HOURS_LIMIT = 14 * 24 # Time window for analyzed posts
 
 def get_posts(url, database):
   """
