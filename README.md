@@ -20,6 +20,17 @@ This repo contains files of recommendation system for golos.io
 
 Install LibFFM before usage. Instruction can be found here: https://github.com/alexeygrigorev/libffm-python
 
+#### Load MongoDB dump
+
+
+Run synchronization with Golos node:
+```bash
+$ python3 sync/sync_comments.py
+```
+#### Run synchronization with Golosio MySQL:
+
+
+
 To add tasks to cron tab and to download first version of a model:
 ```bash
 $ install.sh DATABASE_HOST:DATABASE_PORT DATABASE_NAME
@@ -170,3 +181,11 @@ To see model logs, run:
 ```bash
 tail -f ./model.log
 ```
+
+### Timing
+
+lda - 1.5h
+doc2vec - 1.5h
+ann - 1h
+train - 5h
+predict - 2.5h
