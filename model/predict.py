@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from pymongo import MongoClient, DESCENDING
 import datetime as dt
-from train import create_ffm_dataset, extend_events, get_posts
+from train import create_ffm_dataset, extend_events, get_posts, get_events
 import ffm
 from sklearn.externals import joblib
 import utils
@@ -12,33 +12,6 @@ import pdb
 import datetime as dt
 
 USERS_POSTS_LIMIT = 100 # Max number of recommendations
-HOURS_LIMIT = 365 * 24 # Time window for recommended posts
-
-def get_new_posts(url, database):
-  """
-    Function to get last posts from mongo database
-  """
-  date = dt.datetime.now() - dt.timedelta(hours=HOURS_LIMIT)
-  posts = pd.DataFrame()
-  client = MongoClient(url)
-  db = client[database]
-  posts = pd.DataFrame(list(db.comment.find(
-    {
-      'permlink' : {'$exists' : True},
-      'depth': 0,
-      'similar_posts': {'$exists' : True},
-      'created': {'$gte': date}
-    }, {
-      'permlink': 1,
-      'author': 1, 
-      'parent_permlink': 1,
-      'created': 1,
-      'json_metadata': 1,
-      'similar_posts': 1,
-      'similar_distances': 1,
-    }
-  )))
-  return utils.preprocess_posts(posts)
 
 def create_dataset(posts, events):
   """
@@ -69,14 +42,13 @@ def create_dataset(posts, events):
 
 def save_recommendations(recommendations, url, database):
   recommendations.to_csv("recommendations.csv")
-  posts = pd.DataFrame()
   client = MongoClient(url)
   db = client[database]
   db.recommendation.drop()
   db.recommendation.insert_many(recommendations.to_dict('records'))
 
 @utils.error_log("FFM")
-def predict(events, database_url, database):
+def predict(database_url, database):
   """
     Function to run prediction process:
     - Get all posts in a model
@@ -86,19 +58,16 @@ def predict(events, database_url, database):
     - Get FFM predictions
     - Save recommendations to a mongo database
   """
-  utils.wait_and_lock_mutex(database_url, database, "lda")
-  utils.wait_and_lock_mutex(database_url, database, "ann")
-  utils.log("FFM", "Get new posts...")
-  new_posts = get_new_posts(database_url, database)
-  utils.log("FFM", "Get all posts...")
+  utils.log("FFM", "Get posts...")
+  utils.wait_for_event(database_url, database, "get similar posts")
   posts = get_posts(database_url, database)
-  utils.unlock_mutex(database_url, database, "lda")
-  utils.unlock_mutex(database_url, database, "ann")
   utils.log("FFM", "Create dataset...")
-  dataset = create_dataset(new_posts, events)
+  events = get_events(database_url, database)
+  dataset = create_dataset(posts, events)
   utils.log("FFM", "Extend events...")
   dataset = extend_events(dataset, posts)
   utils.log("FFM", "Prepare model...")
+  utils.wait_for_event(database_url, database, "save ffm model")
   model = ffm.read_model("./model.bin")
   mappings = joblib.load("./mappings.pkl")
   mappings, ffm_dataset_X, ffm_dataset_y = create_ffm_dataset(dataset, mappings)
@@ -108,5 +77,4 @@ def predict(events, database_url, database):
   save_recommendations(dataset[["user_id", "post_permlink", "prediction"]], database_url, database)
 
 if (__name__ == "__main__"):
-  raw_events = pd.read_csv("./extended_events.csv")
-  predict(raw_events, sys.argv[1], sys.argv[2])
+  predict(sys.argv[1], sys.argv[2])

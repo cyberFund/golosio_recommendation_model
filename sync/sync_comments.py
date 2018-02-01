@@ -12,7 +12,7 @@ from tqdm import tqdm
 # import pistonapi as steemapi
 
 # Golos node params
-rpc = SteemNodeRPC("ws://localhost:8090", apis=["follow", "database"])
+rpc = SteemNodeRPC(sys.argv[1], apis=["follow", "database"])
 # MongoDB params
 mongo = MongoClient()
 # Database name in MongoDB

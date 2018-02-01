@@ -153,9 +153,8 @@ def run_doc2vec(database_url, database_name):
   utils.log("Doc2Vec", "Prepare model...")
   model = create_model(usable_texts)
   utils.log("Doc2Vec", "Save vectors...")
-  utils.wait_and_lock_mutex(database_url, database_name, "doc2vec")
   save_document_vectors(database_url, database_name, posts, texts, model)
-  utils.unlock_mutex(database_url, database_name, "doc2vec")
+  utils.send_event(database_url, database_name, "infer vectors")
 
 if (__name__ == "__main__"):
   run_doc2vec(sys.argv[1], sys.argv[2])

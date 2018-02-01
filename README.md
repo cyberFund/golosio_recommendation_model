@@ -18,7 +18,7 @@ This repo contains files of recommendation system for golos.io
 ```
 # Installation
 
-Install LibFFM before usage. Instruction can be found here: https://github.com/alexeygrigorev/libffm-python
+Install LibFFM before usage. Instruction can be found here: http://github.com/alexeygrigorev/libffm-python
 
 #### Load MongoDB dump
 
@@ -68,17 +68,17 @@ $ run.sh localhost:27017 steemdb_1
 
 To get supported user ids, run
 ```bash
-$ curl -k https://localhost:8080/users
+$ curl http://localhost:8080/users
 ```
 
 To get history for some user, run:
 ```bash
-$ curl -k https://localhost:8080/history?user=USER_ID
+$ curl http://localhost:8080/history?user=USER_ID
 ```
 
 For example:
 ```bash
-$ curl -k https://localhost:8080/history?user=58158
+$ curl http://localhost:8080/history?user=58158
 
 [
   "@vik/test-redaktora-dlya-botov-ot-vik-11-10", 
@@ -94,13 +94,13 @@ $ curl -k https://localhost:8080/history?user=58158
 
 To get similar posts and distances to each of them for a specified one, run:
 ```bash
-$ curl -k https://localhost:8080/similar?permlink=POST_PERMLINK
+$ curl http://localhost:8080/similar?permlink=POST_PERMLINK
 ```
 
 For example:
 
 ```bash
-$ curl -k https://localhost:8080/similar?permlink=@gryph0n/podarochnyi-byteball
+$ curl http://localhost:8080/similar?permlink=@gryph0n/podarochnyi-byteball
 
 {
   "@cryptojournal/bitpay-privlek-usd30-mln-v-ramkakh-finansirovaniya-serii-v": 0.0, 
@@ -118,12 +118,12 @@ $ curl -k https://localhost:8080/similar?permlink=@gryph0n/podarochnyi-byteball
 
 To get recommendations for specified user, run:
 ```bash
-curl -k https://localhost:8080/recommendations?user=USER_ID
+curl http://localhost:8080/recommendations?user=USER_ID
 ```
 
 For example:
 ```bash
-$ curl -k https://localhost:8080/recommendations?user=58158
+$ curl http://localhost:8080/recommendations?user=58158
 
 [
   {

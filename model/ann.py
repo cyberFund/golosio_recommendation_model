@@ -135,12 +135,9 @@ def run_ann(database_url, database_name):
     - Create and train ANN model from vectorized posts
     - Save similar posts to mongo database
   """
-  utils.wait_and_lock_mutex(database_url, database_name, "doc2vec")
-  utils.wait_and_lock_mutex(database_url, database_name, "lda")
   utils.log("ANN", "Get posts...")
+  utils.wait_for_event(database_url, database_name, "infer vectors")
   posts = get_posts(database_url, database_name)
-  utils.unlock_mutex(database_url, database_name, "doc2vec")
-  utils.unlock_mutex(database_url, database_name, "lda")
   utils.log("ANN", "Prepare posts...")
   vectors = prepare_posts(posts)
   vectors.to_csv("./vectors.csv")
@@ -149,10 +146,9 @@ def run_ann(database_url, database_name):
   utils.log("ANN", "Train model...")
   train_model(model)
   model.save("similar.ann")
-  utils.wait_and_lock_mutex(database_url, database_name, "ann")
   utils.log("ANN", "Save similar posts...")
   save_similar_posts(database_url, database_name, posts, vectors, model)
-  utils.unlock_mutex(database_url, database_name, "ann")
+  utils.send_event(database_url, database_name, "get similar posts")
 
 if (__name__ == "__main__"):
   run_ann(sys.argv[1], sys.argv[2])

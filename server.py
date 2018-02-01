@@ -6,10 +6,11 @@ import sys
 from pymongo import MongoClient
 import pandas as pd
 import pdb
+from model.train import get_events
 
-events = pd.read_csv("./extended_events.csv")
 database_url = sys.argv[1]
 database_name = sys.argv[2]
+events = get_events(database_url, database_name)
 
 app = Flask(__name__)
 CORS(app)
@@ -64,6 +65,5 @@ def similar():
 
 if __name__ == '__main__':
   config(app)
-  # TODO add certificate
   port = 8080 # Use desired port
-  app.run(port=port, ssl_context='adhoc')
+  app.run(port=port)

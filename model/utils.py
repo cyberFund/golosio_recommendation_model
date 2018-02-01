@@ -32,18 +32,6 @@ def get_last_post_date(url, database):
   ).sort([("created", DESCENDING)]).limit(1)[0]
   return last_post['created']
 
-def get_last_event_date(url, database):
-  client = MongoClient(url)
-  db = client[database]
-  last_event = db.event.find(
-    {
-    }, {
-      'created_at': 1,
-    }
-  ).sort([("created_at", DESCENDING)]).limit(1)[0]
-  return last_event['created_at']
-
-
 def preprocess_posts(posts, include_all_tags=False):
   """
     Function to add full permlink and tags for each post in dataframe extracted from mongo
@@ -157,23 +145,22 @@ def error_log(model):
     return wrapper
   return error_log_decorator
 
-def wait_and_lock_mutex(url, database, process):
+def wait_for_event(url, database, process):
   """
-    Function to wait for database access for some process and to lock it0 then
+    Function to wait for database access for some process and to lock it then
   """
-  log(process, "Waiting for mutex...")
+  log(process, "Waiting for event...")
   client = MongoClient(url)
   db = client[database]
-  while db.model_event.find_one({'process': process, "free": False}):
+  while not db.model_event.find_one({'process': process, "sent": True}):
     sleep(3)
-  log(process, "Locked mutex")
-  db.model_event.update_one({'process': process}, {'$set': {'free': False}}, upsert=True)
+  db.model_event.update_one({'process': process}, {'$set': {'sent': False}})
 
-def unlock_mutex(url, database, process):
+def send_event(url, database, process):
   """
-    Function unlock access to a database for some process
+    Function that unlock access to a database for some process
   """
-  log(process, "Unlocked mutex")
+  log(process, "Sending event...")
   client = MongoClient(url)
   db = client[database]
-  db.model_event.update_one({'process': process}, {'$set': {'free': True}}, upsert=True)
+  db.model_event.update_one({'process': process}, {'$set': {'sent': True}}, upsert=True)
