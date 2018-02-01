@@ -7,7 +7,9 @@ This repo contains files of recommendation system for golos.io
 +-- gdisk - tool to download first version of model from google drive 
 +-- server.py - Flask server for recommendation system
 +-- sync
-   +-- comments.py - Synchronizing MongoDB with Golos node
+   +-- convert_events.py - Convert events in MongoDB for training FFM model
+   +-- sync_comments.py - Synchronizing MongoDB with Golos node
+   +-- sync_events.py - Synchronizing Golosio MySQL with MongoDB
 +-- model
    +-- utils.py - Helpers for preprocessing, processes regulation and etc.
    +-- ann.py - Process of finding similar posts
@@ -53,7 +55,7 @@ Recommendation model architecture: ![Recommendation model architecture](architec
 To synchronize mongo database with golos.io blockchain, run:
 ```bash
 $ cd ./sync
-$ python3 ./sync_comments.py
+$ python3 ./sync_comments.py GOLOS_NODE_HOST:GOLOS_NODE_PORT
 ```
 
 To start server, run:
