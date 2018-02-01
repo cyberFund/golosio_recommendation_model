@@ -182,7 +182,7 @@ To see model logs, run:
 tail -f ./model.log
 ```
 
-### Timing
+# Timing
 
 - lda - 1.5h
 - doc2vec - 1.5h
