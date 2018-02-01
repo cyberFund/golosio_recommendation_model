@@ -38,7 +38,7 @@ $ install.sh DATABASE_HOST:DATABASE_PORT DATABASE_NAME
 
 For example:
 ```bash
-$ install.sh localhost:27017 steemdb_1
+$ install.sh localhost:27017 golos_comments
 ```
 
 To remove tasks from cron tab, run:
@@ -184,8 +184,8 @@ tail -f ./model.log
 
 ### Timing
 
-lda - 1.5h
-doc2vec - 1.5h
-ann - 1h
-train - 5h
-predict - 2.5h
+- lda - 1.5h
+- doc2vec - 1.5h
+- ann - 1h
+- train - 5h
+- predict - 2.5h
