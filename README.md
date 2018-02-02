@@ -4,6 +4,9 @@ This repo contains files of recommendation system for golos.io
 
 ```
 .
++-- instal.sh
++-- run.sh
++-- uninstal.sh
 +-- gdisk - tool to download first version of model from google drive 
 +-- server.py - Flask server for recommendation system
 +-- sync
@@ -197,9 +200,10 @@ tail -f ./model.log
 ```
 
 # Timing
-
+Processing time:
 - lda - 1.5h
 - doc2vec - 1.5h
 - ann - 1h
 - train - 5h
 - predict - 2.5h
+Test by server i7-5930K, 128Gb DDR-4, 1 Tb SSD-PCIe.
