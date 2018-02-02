@@ -13,7 +13,6 @@ This repo contains files of recommendation system for golos.io
 +-- model
    +-- utils.py - Helpers for preprocessing, processes regulation and etc.
    +-- ann.py - Process of finding similar posts
-   +-- lda.py - Process of finding LDA topics for each post
    +-- doc2vec.py - Process of finding doc2vec vectors for each post
    +-- train.py - Process of training FFM model
    +-- predict.py - Process of creating predictions
