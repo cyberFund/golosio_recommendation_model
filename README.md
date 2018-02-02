@@ -40,7 +40,7 @@ To load events to a mongo database from mysql database, use this sql to create c
 SELECT user_id, event_type, value, refurl, created_at
 FROM golos.web_events 
 WHERE 
-	(event_type = "Comment" OR event_type = "Vote" OR event_type = "PageView") 
+   (event_type = "Comment" OR event_type = "Vote" OR event_type = "PageView") 
    AND created_at < CURDATE()
    AND created_at >  CURDATE() - INTERVAL 1 DAY
 INTO OUTFILE 'PATH_TO_CSV'
