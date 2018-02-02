@@ -70,11 +70,6 @@ $ uninstall.sh
 Recommendation model architecture: ![Recommendation model architecture](architecture.png)
 
 # How to use it
-To synchronize mongo database with golos.io blockchain, run:
-```bash
-$ cd ./sync
-$ python3 ./sync_comments.py GOLOS_NODE_HOST:GOLOS_NODE_PORT
-```
 
 To start server, run:
 ```bash
