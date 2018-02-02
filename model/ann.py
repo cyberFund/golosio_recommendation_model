@@ -14,31 +14,11 @@ NUMBER_OF_TREES = 1000
 NUMBER_OF_RECOMMENDATIONS = 10
 NUMBER_OF_VALUES = 1000
 
-HOURS_LIMIT = 14 * 24 # Time window for analyzed posts
-
 def get_posts(url, database):
-  """
-    Function to get last posts with defined inferred vector and topic from mongo database
-  """
-  date = utils.get_last_post_date(url, database) - dt.timedelta(hours=HOURS_LIMIT)
-  client = MongoClient(url)
-  db = client[database]
-  posts = pd.DataFrame(list(db.comment.find(
-    {
-      'permlink' : {'$exists' : True},
-      'inferred_vector' : {'$exists' : True},
-      'depth': 0,
-      'created': {'$gte': date}
-    }, {
-      'permlink': 1,
-      'author': 1,
-      'inferred_vector': 1,
-      'parent_permlink': 1,
-      'created': 1,
-      'json_metadata': 1,
-      'body': 1,
-    }
-  )))
+  events = utils.get_events(url, database)
+  posts = utils.get_posts(url, database, events, {
+    'inferred_vector' : {'$exists' : True}
+  })
   return utils.preprocess_posts(posts, include_all_tags=True)
 
 def add_popular_tags(posts):

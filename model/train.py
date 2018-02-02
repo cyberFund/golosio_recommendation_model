@@ -23,45 +23,9 @@ MODEL_PARAMETERS = {
 ITERATIONS = 10
 WORKERS = 13
 
-def get_events(url, database): 
-  """
-    Function to get latest events from a database
-  """
-  client = MongoClient(url) 
-  db = client[database] 
-  events = pd.DataFrame(list(db.event.find( 
-    {
-    }, { 
-      'user_id': 1,  
-      'post_permlink' : 1, 
-      'like' : 1, 
-    } 
-  ))) 
-  return events 
-
-def get_posts(url, database, events):
-  """
-    Function to get all posts from a database
-  """
-  client = MongoClient(url)
-  db = client[database]
-  posts = pd.DataFrame(list(db.comment.find(
-    {
-      '_id' : {
-        '$in' : set(events["post_permlink"].apply(lambda x: x[1:]))
-      },
-      'depth': 0,
-      'similar_posts': {"$exists": True}
-    }, {
-      'permlink': 1,
-      'author': 1, 
-      'parent_permlink': 1,
-      'created': 1,
-      'json_metadata': 1,
-      'similar_posts': 1,
-      'similar_distances': 1,
-    }
-  )))
+def get_posts(url, database):
+  events = utils.get_events(url, database)
+  posts = utils.get_posts(url, database, events)
   return utils.preprocess_posts(posts)
 
 def extend_events(events, posts):

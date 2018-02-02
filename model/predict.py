@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from pymongo import MongoClient, DESCENDING
 import datetime as dt
-from train import create_ffm_dataset, extend_events, get_posts, get_events
+from train import create_ffm_dataset, extend_events
 import ffm
 from sklearn.externals import joblib
 import utils
@@ -12,6 +12,13 @@ import pdb
 import datetime as dt
 
 USERS_POSTS_LIMIT = 100 # Max number of recommendations
+
+def get_posts(url, database):
+  events = utils.get_events(url, database)
+  posts = utils.get_posts(url, database, events, {
+    'similar_posts' : {'$exists' : True}
+  })
+  return utils.preprocess_posts(posts)
 
 def create_dataset(posts, events):
   """
@@ -62,7 +69,7 @@ def predict(database_url, database):
   utils.wait_for_event(database_url, database, "get similar posts")
   posts = get_posts(database_url, database)
   utils.log("FFM", "Create dataset...")
-  events = get_events(database_url, database)
+  events = utils.get_events(database_url, database)
   dataset = create_dataset(posts, events)
   utils.log("FFM", "Extend events...")
   dataset = extend_events(dataset, posts)
