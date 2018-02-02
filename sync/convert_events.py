@@ -7,11 +7,12 @@ import dask.dataframe as dd
 import sys
 
 HOURS_LIMIT = 14 * 24 # Time window for recommended posts
+WORKERS = 13
 
 def get_last_event_date(url, database):
   client = MongoClient(url)
   db = client[database]
-  last_event = db.event.find(
+  last_event = db.raw_event.find(
     {
     }, {
       'created_at': 1,
@@ -43,7 +44,7 @@ def parse_refurl(url):
 def parse_recommendations(urls):
   return ["@" + url[1:-1] for url in urls[1:-1].split(",") if len(url) > 0]
 
-def remove_last_events(url, database)
+def remove_last_events(url, database):
   client = MongoClient(url)
   db = client[database]
   db.drop_collection('event')
@@ -123,7 +124,7 @@ def convert_events(database_url, database_name):
   raw_events = get_raw_events(database_url, database_name)
   events = convert_dataframe(raw_events)
   remove_last_events(database_url, database_name)
-  save_events(database_url, database_name, events_path)
+  save_events(database_url, database_name, events)
 
 if (__name__ == "__main__"):
   convert_events(sys.argv[1], sys.argv[2])
