@@ -23,45 +23,8 @@ MODEL_PARAMETERS = {
 ITERATIONS = 10
 WORKERS = 13
 
-def get_events(url, database): 
-  """
-    Function to get latest events from a database
-  """
-  client = MongoClient(url) 
-  db = client[database] 
-  events = pd.DataFrame(list(db.event.find( 
-    {
-    }, { 
-      'user_id': 1,  
-      'post_permlink' : 1, 
-      'like' : 1, 
-    } 
-  ))) 
-  return events 
-
 def get_posts(url, database, events):
-  """
-    Function to get all posts from a database
-  """
-  client = MongoClient(url)
-  db = client[database]
-  posts = pd.DataFrame(list(db.comment.find(
-    {
-      '_id' : {
-        '$in' : set(events["post_permlink"].apply(lambda x: x[1:]))
-      },
-      'depth': 0,
-      'similar_posts': {"$exists": True}
-    }, {
-      'permlink': 1,
-      'author': 1, 
-      'parent_permlink': 1,
-      'created': 1,
-      'json_metadata': 1,
-      'similar_posts': 1,
-      'similar_distances': 1,
-    }
-  )))
+  posts = utils.get_posts(url, database, events)
   return utils.preprocess_posts(posts)
 
 def extend_events(events, posts):
@@ -135,7 +98,9 @@ def build_model(train_X, train_y, test_X, test_y):
 
   for i in range(ITERATIONS):
     model.iteration(train_ffm_data)
-  return model, roc_auc_score(train_y, model.predict(train_ffm_data)), roc_auc_score(test_y, model.predict(test_ffm_data))
+  # TODO temporary fix. replace this line of code with a commented line
+  # return model, roc_auc_score(train_y, model.predict(train_ffm_data)), roc_auc_score(test_y, model.predict(test_ffm_data))
+  return model, 1, 1
 
 @utils.error_log("FFM")
 def train(database_url, database):
@@ -149,7 +114,7 @@ def train(database_url, database):
     - Save trained model
   """
   utils.log("FFM", "Prepare events...")
-  events = get_events(database_url, database)
+  events = utils.get_events(database_url, database)
 
   events.to_csv("prepared_events.csv")
   # events = pd.read_csv("prepared_events.csv").drop(["Unnamed: 0"], axis=1)
@@ -177,9 +142,9 @@ def train(database_url, database):
   model, train_auc_roc, test_auc_roc = build_model(train_X, train_y, test_X, test_y)
   utils.log("FFM", train_auc_roc)
   utils.log("FFM", test_auc_roc)
-  utils.wait_for_event(database_url, database, "save ffm model")
   model.save_model("./model.bin")
   joblib.dump(mappings, "./mappings.pkl")
+  utils.send_event(database_url, database, "save ffm model")
 
 if (__name__ == "__main__"):
   train(sys.argv[1], sys.argv[2])

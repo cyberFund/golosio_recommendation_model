@@ -24,30 +24,9 @@ DOC2VEC_PARAMETERS = {
 DOC2VEC_STEPS = 2500
 DOC2VEC_ALPHA = 0.03
 
-HOURS_LIMIT = 14 * 24 # Time window for analyzed posts
-
 def get_posts(url, database):
-  """
-    Function to get last posts from mongo database
-  """
-  date = utils.get_last_post_date(url, database) - dt.timedelta(hours=HOURS_LIMIT)
-  client = MongoClient(url)
-  db = client[database]
-  posts = pd.DataFrame(list(db.comment.find(
-    {
-      'permlink' : {'$exists' : True},
-      'depth': 0,
-      'created': {'$gte': date}
-    }, {
-      'permlink': 1,
-      'author': 1, 
-      'parent_permlink': 1,
-      'created': 1,
-      'json_metadata': 1,
-      'body': 1,
-      'prepared_body': 1
-    }
-  )))
+  events = utils.get_events(url, database)
+  posts = utils.get_posts(url, database, events)
   return utils.preprocess_posts(posts)
 
 def remove_short_words(texts):
