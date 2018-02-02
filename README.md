@@ -34,7 +34,7 @@ $ python3 ./sync/sync_comments.py NODE_WS_URL
 ```
 
 To load events to a mongo database from mysql database, use this sql to create csv:
-```bash
+```sql
 SELECT user_id, event_type, value, refurl, created_at
 FROM golos.web_events 
 WHERE 
