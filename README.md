@@ -4,9 +4,9 @@ This repo contains files of recommendation system for golos.io
 
 ```
 .
-+-- instal.sh
++-- install.sh
 +-- run.sh
-+-- uninstal.sh
++-- uninstall.sh
 +-- gdisk - tool to download first version of model from google drive 
 +-- server.py - Flask server for recommendation system
 +-- sync
