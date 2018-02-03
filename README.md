@@ -7,7 +7,7 @@ This repo contains files of recommendation system for golos.io
 +-- install.sh
 +-- run.sh
 +-- uninstall.sh
-+-- gdisk - tool to download first version of model from google drive 
++-- gdisk - Tool to download first version of model from google drive 
 +-- server.py - Flask server for recommendation system
 +-- sync
    +-- convert_events.py - Convert events in MongoDB for training FFM model
@@ -206,4 +206,5 @@ Processing time:
 - ann - 1h
 - train - 5h
 - predict - 2.5h
-Test by server i7-5930K, 128Gb DDR-4, 1 Tb SSD-PCIe.
+
+Tested on a server with i7-5930K, 128Gb DDR-4, 1 Tb SSD-PCIe.
