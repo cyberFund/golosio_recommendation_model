@@ -4,7 +4,10 @@ This repo contains files of recommendation system for golos.io
 
 ```
 .
-+-- gdisk - tool to download first version of model from google drive 
++-- install.sh
++-- run.sh
++-- uninstall.sh
++-- gdisk - Tool to download first version of model from google drive 
 +-- server.py - Flask server for recommendation system
 +-- sync
    +-- convert_events.py - Convert events in MongoDB for training FFM model
@@ -13,7 +16,6 @@ This repo contains files of recommendation system for golos.io
 +-- model
    +-- utils.py - Helpers for preprocessing, processes regulation and etc.
    +-- ann.py - Process of finding similar posts
-   +-- lda.py - Process of finding LDA topics for each post
    +-- doc2vec.py - Process of finding doc2vec vectors for each post
    +-- train.py - Process of training FFM model
    +-- predict.py - Process of creating predictions
@@ -22,18 +24,36 @@ This repo contains files of recommendation system for golos.io
 
 Install LibFFM before usage. Instruction can be found here: http://github.com/alexeygrigorev/libffm-python
 
-#### Load MongoDB dump
-
-
-Run synchronization with Golos node:
+Prepare mongo database before installation. You can load current mongo dumps here:
 ```bash
-$ python3 sync/sync_comments.py
+$ scp earth@earth.cyber.fund:~/Documents/golosio-recommendation-model/golosio-recommendation-dump-comment.json ./
+$ scp earth@earth.cyber.fund:~/Documents/golosio-recommendation-model/golosio-recommendation-dump-event.json ./
 ```
-#### Run synchronization with Golosio MySQL:
 
+To load comments from golos node, run:
+```bash
+$ python3 ./sync/sync_comments.py NODE_WS_URL
+```
 
+To load events to a mongo database from mysql database, use this sql to create csv:
+```sql
+SELECT user_id, event_type, value, refurl, created_at
+FROM golos.web_events 
+WHERE 
+   (event_type = "Comment" OR event_type = "Vote" OR event_type = "PageView") 
+   AND created_at < CURDATE()
+   AND created_at >  CURDATE() - INTERVAL 1 DAY
+INTO OUTFILE 'PATH_TO_CSV'
+FIELDS TERMINATED BY ',' 
+ENCLOSED BY '"';
+```
+Then use created file in these scripts:
+```bash
+$ python3 ./sync/sync_events.py MONGO_HOST:MONGO_PORT MONGO_DATABASE PATH_TO_CSV
+$ python3 ./sync/convert_events.py MONGO_HOST:MONGO_PORT MONGO_DATABASE
+```
 
-To add tasks to cron tab and to download first version of a model:
+To add tasks for model rebuild to a cron tab, use:
 ```bash
 $ install.sh DATABASE_HOST:DATABASE_PORT DATABASE_NAME
 ```
@@ -52,11 +72,6 @@ $ uninstall.sh
 Recommendation model architecture: ![Recommendation model architecture](architecture.png)
 
 # How to use it
-To synchronize mongo database with golos.io blockchain, run:
-```bash
-$ cd ./sync
-$ python3 ./sync_comments.py GOLOS_NODE_HOST:GOLOS_NODE_PORT
-```
 
 To start server, run:
 ```bash
@@ -185,9 +200,11 @@ tail -f ./model.log
 ```
 
 # Timing
-
+Processing time:
 - lda - 1.5h
 - doc2vec - 1.5h
 - ann - 1h
 - train - 5h
 - predict - 2.5h
+
+Tested on a server with i7-5930K, 128Gb DDR-4, 1 Tb SSD-PCIe.

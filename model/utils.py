@@ -12,6 +12,7 @@ from tqdm import *
 import logging
 from time import sleep
 from functools import wraps
+import pandas as pd
 
 logging.basicConfig(filename='model.log', format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
@@ -35,7 +36,7 @@ def get_events(url, database):
   ))) 
   return events 
 
-def get_posts(url, database, events, filter_options):
+def get_posts(url, database, events, filter_options={}):
   """
     Function to get all posts from a database
   """
@@ -47,7 +48,6 @@ def get_posts(url, database, events, filter_options):
         '$in' : set(events["post_permlink"].apply(lambda x: x[1:]))
       },
       'depth': 0,
-      'similar_posts': {"$exists": True}
     }), **filter_options}, {
       'permlink': 1,
       'author': 1, 
@@ -56,7 +56,9 @@ def get_posts(url, database, events, filter_options):
       'json_metadata': 1,
       'similar_posts': 1,
       'similar_distances': 1,
-      'inferred_vector': 1
+      'inferred_vector': 1,
+      'body': 1,
+      'prepared_body': 1
     }
   )))
   return posts
