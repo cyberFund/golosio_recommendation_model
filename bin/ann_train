@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+
+from golosio_recommendation_model.model.train.ann import run_ann
+import sys
+
+run_ann(sys.argv[1], sys.argv[2])
