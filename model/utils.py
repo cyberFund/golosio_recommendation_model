@@ -171,7 +171,8 @@ def log(model, message):
   """
     Function to print given message to a log
   """
-  logging.warning(model + ": " + message)
+  logging.warning(model + ": " + str(message))
+  print(model + ": " + str(message))
 
 def error_log(model):
   def error_log_decorator(f):

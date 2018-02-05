@@ -1,6 +1,6 @@
 import pdb
 import numpy as np
-import utils
+from model import utils
 import sys
 from pymongo import MongoClient
 import pandas as pd
@@ -116,7 +116,6 @@ def run_ann(database_url, database_name):
     - Save similar posts to mongo database
   """
   utils.log("ANN", "Get posts...")
-  utils.wait_for_event(database_url, database_name, "infer vectors")
   posts = get_posts(database_url, database_name)
   utils.log("ANN", "Prepare posts...")
   vectors = prepare_posts(posts)
@@ -128,7 +127,6 @@ def run_ann(database_url, database_name):
   model.save("similar.ann")
   utils.log("ANN", "Save similar posts...")
   save_similar_posts(database_url, database_name, posts, vectors, model)
-  utils.send_event(database_url, database_name, "get similar posts")
 
 if (__name__ == "__main__"):
   run_ann(sys.argv[1], sys.argv[2])

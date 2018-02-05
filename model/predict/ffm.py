@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 from pymongo import MongoClient, DESCENDING
 import datetime as dt
-from train import create_ffm_dataset, extend_events
+from model.train.ffm import create_ffm_dataset, extend_events
 import ffm
 from sklearn.externals import joblib
-import utils
+from model import utils
 import sys
 from tqdm import *
 import pdb
@@ -66,7 +66,6 @@ def predict(database_url, database):
     - Save recommendations to a mongo database
   """
   utils.log("FFM", "Get posts...")
-  utils.wait_for_event(database_url, database, "get similar posts")
   posts = get_posts(database_url, database)
   utils.log("FFM", "Create dataset...")
   events = utils.get_events(database_url, database)
@@ -74,7 +73,6 @@ def predict(database_url, database):
   utils.log("FFM", "Extend events...")
   dataset = extend_events(dataset, posts)
   utils.log("FFM", "Prepare model...")
-  utils.wait_for_event(database_url, database, "save ffm model")
   model = ffm.read_model("./model.bin")
   mappings = joblib.load("./mappings.pkl")
   mappings, ffm_dataset_X, ffm_dataset_y = create_ffm_dataset(dataset, mappings)

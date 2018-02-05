@@ -8,7 +8,7 @@ from sklearn.externals import joblib
 from sklearn.preprocessing import quantile_transform
 from sklearn.model_selection import train_test_split
 import numpy as np
-import utils
+from model import utils
 import sys
 import dask.dataframe as dd
 from tqdm import *
@@ -141,7 +141,6 @@ def train(database_url, database):
   model, train_auc_roc, test_auc_roc = build_model(train_X, train_y, test_X, test_y)
   utils.log("FFM", train_auc_roc)
   utils.log("FFM", test_auc_roc)
-  utils.wait_for_event(database_url, database, "save ffm model")
   model.save_model("./model.bin")
   joblib.dump(mappings, "./mappings.pkl")
 

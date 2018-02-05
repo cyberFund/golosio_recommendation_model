@@ -1,7 +1,7 @@
 import pdb
 import numpy as np
 from nltk.probability import FreqDist
-import utils
+from model import utils
 import sys
 from pymongo import MongoClient
 import pandas as pd
@@ -133,7 +133,6 @@ def run_doc2vec(database_url, database_name):
   model = create_model(usable_texts)
   utils.log("Doc2Vec", "Save vectors...")
   save_document_vectors(database_url, database_name, posts, texts, model)
-  utils.send_event(database_url, database_name, "infer vectors")
 
 if (__name__ == "__main__"):
   run_doc2vec(sys.argv[1], sys.argv[2])
