@@ -3,4 +3,5 @@
 from golosio_recommendation_model.model.predict.doc2vec import run_doc2vec
 import sys
 
-run_doc2vec(sys.argv[1], sys.argv[2])
+while True:
+  run_doc2vec(sys.argv[1], sys.argv[2])

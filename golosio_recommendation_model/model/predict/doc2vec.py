@@ -19,6 +19,7 @@ def run_doc2vec(database_url, database_name):
     utils.log("Doc2Vec predict", "Prepare posts...")
     texts, usable_texts = prepare_posts(posts)
     utils.log("Doc2Vec predict", "Restore model...")
+    utils.wait_for_file('golos.doc2vec_model')
     model = models.doc2vec.Doc2Vec.load('golos.doc2vec_model')
     utils.log("Doc2Vec predict", "Save inferred vectors...")
     save_document_vectors(database_url, database_name, posts, texts, model)

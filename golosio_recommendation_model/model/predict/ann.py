@@ -3,6 +3,7 @@ import sys
 import pdb
 from golosio_recommendation_model.model.train.ann import prepare_posts, save_similar_posts
 from annoy import AnnoyIndex
+from sklearn.externals import joblib
 
 def get_posts(url, database):
   events = utils.get_events(url, database)
@@ -20,9 +21,14 @@ def run_ann(database_url, database_name):
   posts = get_posts(database_url, database_name)
   if posts.shape[0] > 0:
     utils.log("ANN predict", "Prepare posts...")
+    utils.wait_for_file('popular_tags.pkl')
+    popular_tags = joblib.load("popular_tags.pkl")
+    utils.wait_for_file('popular_categorical.pkl')
+    popular_categorical = joblib.load("popular_categorical.pkl")
     vectors = prepare_posts(posts)
     utils.log("ANN predict", "Restore model...")
     model = AnnoyIndex(vectors.shape[1])
+    utils.wait_for_file('similar.ann')
     model.load('similar.ann')
     utils.log("ANN predict", "Save similar posts...")
     save_similar_posts(database_url, database_name, posts, vectors, model)
