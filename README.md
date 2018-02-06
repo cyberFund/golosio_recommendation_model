@@ -4,21 +4,24 @@ This repo contains files of recommendation system for golos.io
 
 ```
 .
-+-- install.sh
-+-- run.sh
-+-- uninstall.sh
-+-- gdisk - Tool to download first version of model from google drive 
-+-- server.py - Flask server for recommendation system
-+-- sync
-   +-- convert_events.py - Convert events in MongoDB for training FFM model
-   +-- sync_comments.py - Synchronizing MongoDB with Golos node
-   +-- sync_events.py - Synchronizing Golosio MySQL with MongoDB
-+-- model
-   +-- utils.py - Helpers for preprocessing, processes regulation and etc.
-   +-- ann.py - Process of finding similar posts
-   +-- doc2vec.py - Process of finding doc2vec vectors for each post
-   +-- train.py - Process of training FFM model
-   +-- predict.py - Process of creating predictions
++-- golosio_recommendation_model
+   +-- server
+      +-- server.py - Flask server for recommendation system
+      +-- config.py - Server configuration
+   +-- sync
+      +-- convert_events.py - Convert events in MongoDB for training FFM model
+      +-- sync_comments.py - Synchronizing MongoDB with Golos node
+      +-- sync_events.py - Synchronizing Golosio MySQL with MongoDB
+   +-- model
+      +-- utils.py - Helpers for preprocessing, processes regulation and etc.
+      +-- train
+         +-- ann.py - Process of training model to find similar posts
+         +-- doc2vec.py - Process of training model to find doc2vec vectors for each post
+         +-- ffm.py - Process of training FFM model to arrange recommendations for each user
+      +-- predict
+         +-- ann.py - Process of finding similar posts for new posts in database
+         +-- doc2vec.py - Process of finding doc2vec vectors for each new post in database
+         +-- ffm.py - Process of creating recommendations list for each active user
 ```
 # Installation
 
@@ -30,9 +33,14 @@ $ scp earth@earth.cyber.fund:~/Documents/golosio-recommendation-model/golosio-re
 $ scp earth@earth.cyber.fund:~/Documents/golosio-recommendation-model/golosio-recommendation-dump-event.json ./
 ```
 
+Install a package with:
+```bash
+$ pip3 install .
+```
+
 To load comments from golos node, run:
 ```bash
-$ python3 ./sync/sync_comments.py NODE_WS_URL
+$ sync_comments NODE_WS_URL
 ```
 
 To load events to a mongo database from mysql database, use this sql to create csv:
@@ -49,8 +57,7 @@ ENCLOSED BY '"';
 ```
 Then use created file in these scripts:
 ```bash
-$ python3 ./sync/sync_events.py MONGO_HOST:MONGO_PORT MONGO_DATABASE PATH_TO_CSV
-$ python3 ./sync/convert_events.py MONGO_HOST:MONGO_PORT MONGO_DATABASE
+$ sync_events MONGO_HOST:MONGO_PORT MONGO_DATABASE PATH_TO_CSV
 ```
 
 To add tasks for model rebuild to a cron tab, use:
@@ -75,12 +82,12 @@ Recommendation model architecture: ![Recommendation model architecture](architec
 
 To start server, run:
 ```bash
-$ run.sh DATABASE_HOST:DATABASE_PORT DATABASE_NAME
+$ recommendations_server DATABASE_HOST:DATABASE_PORT DATABASE_NAME
 ```
 
 For example:
 ```bash
-$ run.sh localhost:27017 steemdb_1
+$ recommendations_server localhost:27017 steemdb_1
 ```
 
 To get supported user ids, run
@@ -173,7 +180,7 @@ $ curl http://localhost:8080/recommendations?user=58158
 You can change service port here:
 
 ```python
-# server.py
+# server/server.py
 port = 8080 # Use desired port
 ```
 
