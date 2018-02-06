@@ -13,6 +13,7 @@ import logging
 from time import sleep
 from functools import wraps
 import pandas as pd
+import os
 
 logging.basicConfig(filename='model.log', format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
@@ -211,3 +212,8 @@ def unlock_mutex(url, database, process):
   client = MongoClient(url)
   db = client[database]
   db.model_event.update_one({'process': process}, {'$set': {'free': True}}, upsert=True)
+
+def wait_for_file(file):
+  log(file, "Waiting...")
+  while not os.path.isfile(file):
+    sleep(3)
