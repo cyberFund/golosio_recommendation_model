@@ -80,7 +80,7 @@ def prepare_posts(posts, popular_tags=None, popular_categorical=None):
   """
     Function to vectorise posts for ANN algorithm
   """
-  posts = posts.drop(['body', 'permlink', 'post_permlink', 'created', 'similar_posts', 'similar_distances'], axis=1)
+  posts = posts.drop(['body', 'permlink', 'post_permlink', 'created', 'similar_posts', 'similar_distances', 'prepared_body'], axis=1)
   posts, popular_tags = add_popular_tags(posts, popular_tags)
   posts, popular_categorical = convert_categorical(posts, popular_categorical)
   posts = convert_array(posts)
