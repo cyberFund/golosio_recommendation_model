@@ -6,10 +6,12 @@ from annoy import AnnoyIndex
 
 def get_posts(url, database):
   events = utils.get_events(url, database)
+  utils.wait_and_lock_mutex(url, database, "inferred_vector")
   posts = utils.get_posts(url, database, events, {
     'inferred_vector' : {'$exists' : True},
     'similar_posts' : {'$exists' : False},
   })
+  utils.unlock_mutex(url, database, "inferred_vector")
   return utils.preprocess_posts(posts, include_all_tags=True)
 
 @utils.error_log("ANN predict")

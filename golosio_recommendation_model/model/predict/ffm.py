@@ -15,9 +15,11 @@ USERS_POSTS_LIMIT = 100 # Max number of recommendations
 
 def get_posts(url, database):
   events = utils.get_events(url, database)
+  utils.wait_and_lock_mutex(url, database, "similar_posts")
   posts = utils.get_posts(url, database, events, {
     'similar_posts' : {'$exists' : True}
   })
+  utils.unlock_mutex(url, database, "similar_posts")
   return utils.preprocess_posts(posts)
 
 def create_dataset(posts, events):

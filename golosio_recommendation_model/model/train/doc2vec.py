@@ -111,10 +111,12 @@ def save_document_vectors(url, database, posts, texts, model):
   client = MongoClient(url)
   db = client[database]
   posts["prepared_body"] = texts
+  utils.wait_and_lock_mutex(url, database, "inferred_vector")
   for index in tqdm(posts.index):
     post = posts.loc[index]
     inferred_vector = model.infer_vector(post["prepared_body"], steps=DOC2VEC_STEPS, alpha=DOC2VEC_ALPHA)
     db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'inferred_vector': inferred_vector.tolist()}})  
+  utils.unlock_mutex(url, database, "inferred_vector")  
 
 @utils.error_log("Doc2Vec train")
 def run_doc2vec(database_url, database_name):
@@ -132,7 +134,9 @@ def run_doc2vec(database_url, database_name):
   utils.log("Doc2Vec train", "Prepare model...")
   model = create_model(usable_texts)
   utils.log("Doc2Vec train", "Save vectors...")
-  save_document_vectors(database_url, database_name, posts, texts, model)
+  all_posts = get_posts(database_url, database_name)
+  all_texts, all_usable_texts = prepare_posts(all_posts)
+  save_document_vectors(database_url, database_name, all_posts, all_texts, model)
 
 if (__name__ == "__main__"):
   run_doc2vec(sys.argv[1], sys.argv[2])

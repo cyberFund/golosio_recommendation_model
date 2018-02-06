@@ -191,22 +191,23 @@ def error_log(model):
     return wrapper
   return error_log_decorator
 
-def wait_for_event(url, database, process):
+def wait_and_lock_mutex(url, database, process):
   """
     Function to wait for database access for some process and to lock it then
   """
-  log(process, "Waiting for event...")
+  log(process, "Waiting for mutex...")
   client = MongoClient(url)
   db = client[database]
-  while not db.model_event.find_one({'process': process, "sent": True}):
+  while db.model_event.find_one({'process': process, "free": False}):
     sleep(3)
-  db.model_event.update_one({'process': process}, {'$set': {'sent': False}})
+  log(process, "Lock mutex...")
+  db.model_event.update_one({'process': process}, {'$set': {'free': False}}, upsert=True)
 
-def send_event(url, database, process):
+def unlock_mutex(url, database, process):
   """
     Function that unlock access to a database for some process
   """
-  log(process, "Sending event...")
+  log(process, "Unlock mutex...")
   client = MongoClient(url)
   db = client[database]
-  db.model_event.update_one({'process': process}, {'$set': {'sent': True}}, upsert=True)
+  db.model_event.update_one({'process': process}, {'$set': {'free': True}}, upsert=True)
