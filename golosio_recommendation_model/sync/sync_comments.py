@@ -119,7 +119,7 @@ def update_comment(author, permlink):
             }
         )
 
-if __name__ == '__main__':
+def sync_comments():
     # Let's find out how often blocks are generated!
     config = rpc.get_config()
     block_interval = config["STEEMIT_BLOCK_INTERVAL"]
@@ -177,3 +177,7 @@ if __name__ == '__main__':
 
         # Sleep for one block
         time.sleep(block_interval)
+
+
+if __name__ == '__main__':
+    sync_comments()

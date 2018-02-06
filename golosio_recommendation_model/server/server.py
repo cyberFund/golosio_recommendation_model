@@ -1,19 +1,19 @@
 from flask import Flask, jsonify, request, render_template
-from config import config
+from .config import config
 import json
 from flask_cors import CORS
 import sys
 from pymongo import MongoClient
 import pandas as pd
 import pdb
-from model.train import get_events
+from golosio_recommendation_model.model.utils import get_events
 
 database_url = sys.argv[1]
 database_name = sys.argv[2]
 events = get_events(database_url, database_name)
 
 app = Flask(__name__)
-CORS(app)
+port = 8080 # Use desired port
 
 @app.route('/recommendations')
 def recommendations():
@@ -63,7 +63,10 @@ def similar():
   else:
     return jsonify([])
 
-if __name__ == '__main__':
+def run_server():
+  CORS(app)
   config(app)
-  port = 8080 # Use desired port
   app.run(port=port)
+
+if __name__ == '__main__':
+  run_server()

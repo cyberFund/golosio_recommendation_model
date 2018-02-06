@@ -5,6 +5,7 @@ from tqdm import *
 import pdb
 import dask.dataframe as dd
 import sys
+from golosio_recommendation_model.model import utils
 
 HOURS_LIMIT = 14 * 24 # Time window for recommended posts
 WORKERS = 13
@@ -120,9 +121,13 @@ def save_events(url, database, events):
   db = client[database]
   db.event.insert_many(events.to_dict('records'))
 
+@utils.error_log("Sync events")
 def convert_events(database_url, database_name):
+  utils.log("Sync events", "Get raw events from database...")
   raw_events = get_raw_events(database_url, database_name)
+  utils.log("Sync events", "Convert events...")
   events = convert_dataframe(raw_events)
+  utils.log("Sync events", "Save events...")
   remove_last_events(database_url, database_name)
   save_events(database_url, database_name, events)
 
