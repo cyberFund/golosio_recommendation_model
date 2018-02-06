@@ -74,7 +74,7 @@ def prepare_posts(posts):
   """
     Function to vectorise posts for ANN algorithm
   """
-  posts = posts.drop(['body', 'permlink', 'post_permlink', 'created', 'similar_posts', 'similar_distances'], axis=1)
+  posts = posts.drop(['body', 'permlink', 'post_permlink', 'created', 'similar_posts', 'similar_distances', 'prepared_body'], axis=1)
   posts = add_popular_tags(posts)
   posts = convert_categorical(posts)
   posts = convert_array(posts)
