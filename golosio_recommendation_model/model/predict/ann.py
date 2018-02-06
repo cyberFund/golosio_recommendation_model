@@ -25,7 +25,7 @@ def run_ann(database_url, database_name):
     popular_tags = joblib.load("popular_tags.pkl")
     utils.wait_for_file('popular_categorical.pkl')
     popular_categorical = joblib.load("popular_categorical.pkl")
-    vectors = prepare_posts(posts)
+    vectors, popular_tags, popular_categorical = prepare_posts(posts)
     utils.log("ANN predict", "Restore model...")
     model = AnnoyIndex(vectors.shape[1])
     utils.wait_for_file('similar.ann')

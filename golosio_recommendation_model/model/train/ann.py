@@ -28,7 +28,7 @@ def add_popular_tags(posts, popular_tags):
   """
     Function to encode tags with only popular values
   """
-  if not popular_tags:
+  if popular_tags is None:
     all_tags, tag_counts = np.unique([tag for tags in posts["tags"] for tag in tags], return_counts=True)
     popular_tags = all_tags[np.argsort(-tag_counts)][0:NUMBER_OF_VALUES]
   for tag in tqdm(popular_tags):
@@ -76,7 +76,7 @@ def convert_dates(posts):
     posts[column] = quantile_transform(posts[column].values.reshape(-1, 1)).reshape(-1)
   return posts
 
-def prepare_posts(posts, popular_tags=None, popular_categorical=None):
+def prepare_posts(posts, popular_tags=None, popular_categorical={}):
   """
     Function to vectorise posts for ANN algorithm
   """
@@ -140,7 +140,7 @@ def run_ann(database_url, database_name):
   model.save("similar.ann")
   utils.log("ANN train", "Save similar posts...")
   all_posts = get_posts(database_url, database_name)
-  all_vectors = prepare_posts(all_posts)
+  all_vectors, popular_tags, popular_categorical = prepare_posts(all_posts, popular_tags, popular_categorical)
   save_similar_posts(database_url, database_name, all_posts, all_vectors, model)
 
 if (__name__ == "__main__"):
