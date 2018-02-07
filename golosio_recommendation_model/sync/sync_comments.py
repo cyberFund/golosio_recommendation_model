@@ -21,11 +21,6 @@ db = mongo[config['database_name']]
 
 # Calculated last block
 init = db.status.find_one({'_id': 'height'})
-last_block = 1
-
-if(init):
-  last_block = init['value']
-
 # ------------
 # For development:
 #
@@ -124,6 +119,9 @@ def sync_comments():
     # Let's find out how often blocks are generated!
     config = rpc.get_config()
     block_interval = config["STEEMIT_BLOCK_INTERVAL"]
+    last_block = 1
+    if (init):
+        last_block = init['value']
     # We are going to loop indefinitely
     while True:
 
