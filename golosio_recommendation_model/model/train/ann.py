@@ -11,6 +11,8 @@ from sklearn.preprocessing import quantile_transform
 import datetime as dt
 from sklearn.externals import joblib
 from golosio_recommendation_model.config import config
+from golosio_recommendation_model.model.predict.ann import predict_ann
+from golosio_recommendation_model.daemonize import daemonize
 
 NUMBER_OF_TREES = 1000
 NUMBER_OF_RECOMMENDATIONS = 10
@@ -18,11 +20,9 @@ NUMBER_OF_VALUES = 1000
 
 def get_posts(url, database):
   events = utils.get_events(url, database)
-  utils.wait_and_lock_mutex(url, database, "inferred_vector")
   posts = utils.get_posts(url, database, events, {
     'inferred_vector' : {'$exists' : True}
   })
-  utils.unlock_mutex(url, database, "inferred_vector")
   return utils.preprocess_posts(posts, include_all_tags=True)
 
 def add_popular_tags(posts, popular_tags):
@@ -103,23 +103,13 @@ def create_model(posts):
     trees.add_item(index, row.tolist())
   return trees
 
-def save_similar_posts(url, database, posts, vectors, model):
-  """
-    Function to save similar posts for each post within created model to mongo database
-  """
+def unset_similar_posts(url, database):
   client = MongoClient(url)
   db = client[database]
-  utils.wait_and_lock_mutex(url, database, "similar_posts")
-  for index in tqdm(posts.index):
-    post = posts.loc[index]
-    vector = vectors.loc[index].tolist()
-    similar_indices, similar_distances = model.get_nns_by_vector(vector, NUMBER_OF_RECOMMENDATIONS, include_distances=True)
-    similar_posts = posts.loc[similar_indices]["post_permlink"].tolist()
-    db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'similar_posts': similar_posts, 'similar_distances': similar_distances}})
-  utils.unlock_mutex(url, database, "similar_posts")
+  db.comment.update_many({}, {'$unset': {'similar_posts': "", 'similar_distances': ""}})
 
 @utils.error_log("ANN train")
-def run_ann():
+def train_ann():
   """
     Function to run ANN process:
     - Get posts from mongo
@@ -130,20 +120,19 @@ def run_ann():
   database_url = config['database_url']
   database_name = config['database_name']
 
-  while True:
-    utils.log("ANN train", "Get posts...")
-    posts = get_posts(database_url, database_name)
-    utils.log("ANN train", "Prepare posts...")
-    vectors, popular_tags, popular_categorical = prepare_posts(posts)
-    joblib.dump(popular_tags, config['model_path'] + "popular_tags.pkl")
-    joblib.dump(popular_categorical, config['model_path'] + "popular_categorical.pkl")
-    vectors.to_csv(config['model_path'] + "vectors.csv")
-    utils.log("ANN train", "Prepare model...")
-    model = create_model(vectors)
-    utils.log("ANN train", "Train model...")
-    train_model(model)
-    model.save(config['model_path'] + "similar.ann")
-    utils.log("ANN train", "Save similar posts...")
-    all_posts = get_posts(database_url, database_name)
-    all_vectors, popular_tags, popular_categorical = prepare_posts(all_posts, popular_tags, popular_categorical)
-    save_similar_posts(database_url, database_name, all_posts, all_vectors, model)
+  utils.log("ANN train", "Get posts...")
+  posts = get_posts(database_url, database_name)
+  utils.log("ANN train", "Prepare posts...")
+  vectors, popular_tags, popular_categorical = prepare_posts(posts)
+  utils.log("ANN train", "Prepare model...")
+  model = create_model(vectors)
+  utils.log("ANN train", "Train model...")
+  train_model(model)
+  daemonize(predict_ann, "stop")
+  utils.log("ANN train", "Save model...")
+  joblib.dump(popular_tags, config['model_path'] + "popular_tags.pkl")
+  joblib.dump(popular_categorical, config['model_path'] + "popular_categorical.pkl")
+  vectors.to_csv(config['model_path'] + "vectors.csv")
+  model.save(config['model_path'] + "similar.ann")
+  unset_similar_posts(database_url, database_name)
+  daemonize(predict_ann, "start")

@@ -16,11 +16,9 @@ USERS_POSTS_LIMIT = 100 # Max number of recommendations
 
 def get_posts(url, database):
   events = utils.get_events(url, database)
-  utils.wait_and_lock_mutex(url, database, "similar_posts")
   posts = utils.get_posts(url, database, events, {
     'similar_posts' : {'$exists' : True}
   })
-  utils.unlock_mutex(url, database, "similar_posts")
   return utils.preprocess_posts(posts)
 
 def create_dataset(posts, events):
@@ -58,7 +56,7 @@ def save_recommendations(recommendations, url, database):
   db.recommendation.insert_many(recommendations.to_dict('records'))
 
 @utils.error_log("FFM")
-def run_ffm():
+def predict_ffm():
   """
     Function to run prediction process:
     - Get all posts in a model
@@ -71,9 +69,7 @@ def run_ffm():
   database_url = config['database_url']
   database = config['database_name']
   utils.log("FFM", "Prepare model...")
-  utils.wait_for_file(config['model_path'] + 'model.bin')
   model = ffm.read_model(config['model_path'] + "model.bin")
-  utils.wait_for_file(config['model_path'] + 'mappings.pkl')
   mappings = joblib.load(config['model_path'] + "mappings.pkl")
   
   while True:

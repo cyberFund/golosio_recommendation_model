@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from golosio_recommendation_model.model.predict.ann import run_ann
+from golosio_recommendation_model.model.predict.ann import predict_ann
 from golosio_recommendation_model.daemonize import daemonize
 import sys
 
-daemonize(run_ann, sys.argv[1])
+daemonize(predict_ann, sys.argv[1])

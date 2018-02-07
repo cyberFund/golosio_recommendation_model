@@ -10,6 +10,8 @@ import pdb
 import datetime as dt
 from tqdm import *
 from golosio_recommendation_model.config import config
+from golosio_recommendation_model.model.predict.doc2vec import predict_doc2vec
+from golosio_recommendation_model.daemonize import daemonize
 
 WORD_LENGTH_QUANTILE = 10
 TEXT_LENGTH_QUANTILE = 66
@@ -102,25 +104,15 @@ def create_model(texts):
   """
   corpus = create_corpus(texts)
   model = train_model(corpus)
-  model.save(config['model_path'] + 'golos.doc2vec_model')
   return model
 
-def save_document_vectors(url, database, posts, texts, model):
-  """
-    Function to save Doc2Vec vectors for each post to mongo database
-  """
+def unset_inferred_vectors(url, database):
   client = MongoClient(url)
   db = client[database]
-  posts["prepared_body"] = texts
-  utils.wait_and_lock_mutex(url, database, "inferred_vector")
-  for index in tqdm(posts.index):
-    post = posts.loc[index]
-    inferred_vector = model.infer_vector(post["prepared_body"], steps=DOC2VEC_STEPS, alpha=DOC2VEC_ALPHA)
-    db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'inferred_vector': inferred_vector.tolist()}})  
-  utils.unlock_mutex(url, database, "inferred_vector")  
+  db.comment.update_many({}, {'$unset': {'inferred_vector': ""}})
 
 @utils.error_log("Doc2Vec train")
-def run_doc2vec():
+def train_doc2vec():
   """
     Function to run Doc2Vec process:
     - Get all posts from mongo
@@ -131,14 +123,14 @@ def run_doc2vec():
   database_url = config['database_url']
   database_name = config['database_name']
 
-  while True:
-    utils.log("Doc2Vec train", "Get posts...")
-    posts = get_posts(database_url, database_name)
-    utils.log("Doc2Vec train", "Prepare posts...")
-    texts, usable_texts = prepare_posts(posts)
-    utils.log("Doc2Vec train", "Prepare model...")
-    model = create_model(usable_texts)
-    utils.log("Doc2Vec train", "Save vectors...")
-    all_posts = get_posts(database_url, database_name)
-    all_texts, all_usable_texts = prepare_posts(all_posts)
-    save_document_vectors(database_url, database_name, all_posts, all_texts, model)
+  utils.log("Doc2Vec train", "Get posts...")
+  posts = get_posts(database_url, database_name)
+  utils.log("Doc2Vec train", "Prepare posts...")
+  texts, usable_texts = prepare_posts(posts)
+  utils.log("Doc2Vec train", "Prepare model...")
+  model = create_model(usable_texts)
+  daemonize(predict_doc2vec, "stop")
+  utils.log("Doc2Vec train", "Save model...")
+  model.save(config['model_path'] + 'golos.doc2vec_model')
+  unset_inferred_vectors(database_url, database_name)
+  daemonize(predict_doc2vec, "start")

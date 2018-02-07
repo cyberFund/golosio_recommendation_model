@@ -2,7 +2,7 @@ from golosio_recommendation_model.model import utils
 import sys
 from gensim import models, corpora
 import pdb
-from golosio_recommendation_model.model.train.doc2vec import prepare_posts, save_document_vectors
+from golosio_recommendation_model.model.train.doc2vec import prepare_posts
 from golosio_recommendation_model.config import config
 
 def get_posts(url, database):
@@ -12,12 +12,23 @@ def get_posts(url, database):
   })
   return utils.preprocess_posts(posts)
 
+def save_document_vectors(url, database, posts, texts, model):
+  """
+    Function to save Doc2Vec vectors for each post to mongo database
+  """
+  client = MongoClient(url)
+  db = client[database]
+  posts["prepared_body"] = texts
+  for index in tqdm(posts.index):
+    post = posts.loc[index]
+    inferred_vector = model.infer_vector(post["prepared_body"], steps=DOC2VEC_STEPS, alpha=DOC2VEC_ALPHA)
+    db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'inferred_vector': inferred_vector.tolist()}})  
+
 @utils.error_log("Doc2Vec predict")
-def run_doc2vec():
+def predict_doc2vec():
   database_url = config['database_url']
   database_name = config['database_name']
   utils.log("Doc2Vec predict", "Restore model...")
-  utils.wait_for_file(config['model_path'] + 'golos.doc2vec_model')
   model = models.doc2vec.Doc2Vec.load(config['model_path'] + 'golos.doc2vec_model')
 
   while True:

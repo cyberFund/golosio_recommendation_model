@@ -89,15 +89,6 @@ def preprocess_posts(posts, include_all_tags=False):
     posts["last_tag"] = posts["json_metadata"].apply(lambda x: x["tags"][-1] if (type(x) is dict and "tags" in x.keys() and len(x["tags"])) else "")
   return posts.drop(["json_metadata", "_id"], axis=1)
 
-def topics_to_vector(topics, n_topics=100):
-  """
-    Function to convert a set of topic-probability pairs to a vector of probabilities
-  """
-  vector = np.zeros(n_topics)
-  for topic, probability in topics:
-    vector[topic] = probability
-  return vector
-
 def remove_usernames(post):
   """
     Function to remove usernames from a text
@@ -155,21 +146,6 @@ def prepare_post(post):
   words = remove_stopwords(words)
   return lemmatize(words)
 
-def save_topics(url, database, posts, texts, model, dictionary):
-  """
-    Function to save topics for each given post in a database
-  """
-  client = MongoClient(url)
-  db = client[database]
-  posts["prepared_body"] = texts
-  for index in tqdm(posts.index):
-    post = posts.loc[index]
-    post_topics = model.get_document_topics(dictionary.doc2bow(post["prepared_body"]))
-    vector = topics_to_vector(post_topics, n_topics=100)
-    topic = int(np.argmax(vector))
-    topic_probability = float(np.max(vector))
-    db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'topic': topic, 'topic_probability': topic_probability, 'prepared_body': post["prepared_body"]}})
-
 def log(model, message):
   """
     Function to print given message to a log
@@ -191,32 +167,6 @@ def error_log(model):
         log(model, "Finished successfully")
     return wrapper
   return error_log_decorator
-
-def wait_and_lock_mutex(url, database, process):
-  """
-    Function to wait for database access for some process and to lock it then
-  """
-  log(process, "Waiting for mutex...")
-  client = MongoClient(url)
-  db = client[database]
-  while db.model_event.find_one({'process': process, "free": False}):
-    sleep(3)
-  log(process, "Lock mutex...")
-  db.model_event.update_one({'process': process}, {'$set': {'free': False}}, upsert=True)
-
-def unlock_mutex(url, database, process):
-  """
-    Function that unlock access to a database for some process
-  """
-  log(process, "Unlock mutex...")
-  client = MongoClient(url)
-  db = client[database]
-  db.model_event.update_one({'process': process}, {'$set': {'free': True}}, upsert=True)
-
-def wait_for_file(file):
-  log(file, "Waiting...")
-  while not os.path.isfile(file):
-    sleep(3)
 
 def wait_between_iterations():
   sleep(5 * 60)

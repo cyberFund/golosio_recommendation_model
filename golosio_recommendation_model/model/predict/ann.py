@@ -1,7 +1,7 @@
 from golosio_recommendation_model.model import utils
 import sys
 import pdb
-from golosio_recommendation_model.model.train.ann import prepare_posts, save_similar_posts
+from golosio_recommendation_model.model.train.ann import prepare_posts
 from golosio_recommendation_model.config import config
 from annoy import AnnoyIndex
 from sklearn.externals import joblib
@@ -9,29 +9,36 @@ from time import sleep
 
 def get_posts(url, database):
   events = utils.get_events(url, database)
-  utils.wait_and_lock_mutex(url, database, "inferred_vector")
   posts = utils.get_posts(url, database, events, {
     'inferred_vector' : {'$exists' : True},
     'similar_posts' : {'$exists' : False},
   })
-  utils.unlock_mutex(url, database, "inferred_vector")
   return utils.preprocess_posts(posts, include_all_tags=True)
 
 def estimate_number_of_features():
   return pd.read_csv(config['model_path'] + 'vectors.csv').shape[1] - 1
 
+def save_similar_posts(url, database, posts, vectors, model):
+  """
+    Function to save similar posts for each post within created model to mongo database
+  """
+  client = MongoClient(url)
+  db = client[database]
+  for index in tqdm(posts.index):
+    post = posts.loc[index]
+    vector = vectors.loc[index].tolist()
+    similar_indices, similar_distances = model.get_nns_by_vector(vector, NUMBER_OF_RECOMMENDATIONS, include_distances=True)
+    similar_posts = posts.loc[similar_indices]["post_permlink"].tolist()
+    db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'similar_posts': similar_posts, 'committed_similar_posts': similar_posts, 'similar_distances': similar_distances, 'committed_similar_distances': similar_distances}})
+
 @utils.error_log("ANN predict")
-def run_ann():
+def predict_ann():
   database_url = config['database_url']
   database_name = config['database_name']
   utils.log("ANN predict", "Restore model...")
-  utils.wait_for_file(config['model_path'] + 'popular_tags.pkl')
   popular_tags = joblib.load(config['model_path'] + "popular_tags.pkl")
-  utils.wait_for_file(config['model_path'] + 'popular_categorical.pkl')
   popular_categorical = joblib.load(config['model_path'] + "popular_categorical.pkl")
-  utils.wait_for_file(config['model_path'] + 'vectors.csv')
   model = AnnoyIndex(estimate_number_of_features()) 
-  utils.wait_for_file(config['model_path'] + 'similar.ann')
   model.load(config['model_path'] + 'similar.ann')
 
   while True:

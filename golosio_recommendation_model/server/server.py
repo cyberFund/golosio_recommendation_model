@@ -64,7 +64,7 @@ def similar():
   else:
     return jsonify([])
 
-def run_server():
+def run_recommendations_server():
   CORS(app)
   config(app)
   app.run(port=port)

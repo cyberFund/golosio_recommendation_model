@@ -14,6 +14,8 @@ import dask.dataframe as dd
 from tqdm import *
 import datetime as dt
 from golosio_recommendation_model.config import config
+from golosio_recommendation_model.model.predict.ffm import predict_ffm
+from golosio_recommendation_model.daemonize import daemonize
 
 MODEL_PARAMETERS = {
   'eta': 0.1, 
@@ -104,7 +106,7 @@ def build_model(train_X, train_y, test_X, test_y):
   return model, 1, 1
 
 @utils.error_log("FFM train")
-def run_ffm():
+def train_ffm():
   """
     Function to train FFM model
     - Get all events from mongo database
@@ -117,35 +119,36 @@ def run_ffm():
   database_url = config['database_url']
   database = config['database_name']
 
-  while True: 
-    utils.log("FFM train", "Prepare events...")
-    events = utils.get_events(database_url, database)
+  utils.log("FFM train", "Prepare events...")
+  events = utils.get_events(database_url, database)
 
-    events.to_csv(config['model_path'] + "prepared_events.csv")
-    # events = pd.read_csv("prepared_events.csv").drop(["Unnamed: 0"], axis=1)
+  events.to_csv(config['model_path'] + "prepared_events.csv")
+  # events = pd.read_csv("prepared_events.csv").drop(["Unnamed: 0"], axis=1)
 
-    utils.log("FFM train", "Prepare posts...")
-    posts = get_posts(database_url, database, events)
+  utils.log("FFM train", "Prepare posts...")
+  posts = get_posts(database_url, database, events)
 
-    posts.to_csv(config['model_path'] + "prepared_posts.csv")
-    # posts = pd.read_csv("prepared_posts.csv").drop(["Unnamed: 0"], axis=1)
+  posts.to_csv(config['model_path'] + "prepared_posts.csv")
+  # posts = pd.read_csv("prepared_posts.csv").drop(["Unnamed: 0"], axis=1)
 
-    utils.log("FFM train", "Extend events...")
-    events = extend_events(events, posts)
+  utils.log("FFM train", "Extend events...")
+  events = extend_events(events, posts)
 
-    utils.log("FFM train", "Save events...")
-    events.to_csv(config['model_path'] + "extended_events.csv")
+  utils.log("FFM train", "Save events...")
+  events.to_csv(config['model_path'] + "extended_events.csv")
 
-    # events = pd.read_csv("extended_events.csv").drop(["Unnamed: 0"], axis=1)
+  # events = pd.read_csv("extended_events.csv").drop(["Unnamed: 0"], axis=1)
 
-    utils.log("FFM train", "Create ffm dataset...")
-    mappings, X, y = create_ffm_dataset(events)
-    joblib.dump(X, config['model_path'] + "X.pkl")
-    joblib.dump(y, config['model_path'] + "y.pkl")
-    train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
-    utils.log("FFM train", "Build model...")
-    model, train_auc_roc, test_auc_roc = build_model(train_X, train_y, test_X, test_y)
-    utils.log("FFM train", train_auc_roc)
-    utils.log("FFM train", test_auc_roc)
-    model.save_model(config['model_path'] + "model.bin")
-    joblib.dump(mappings, config['model_path'] + "mappings.pkl")
+  utils.log("FFM train", "Create ffm dataset...")
+  mappings, X, y = create_ffm_dataset(events)
+  joblib.dump(X, config['model_path'] + "X.pkl")
+  joblib.dump(y, config['model_path'] + "y.pkl")
+  train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
+  utils.log("FFM train", "Build model...")
+  model, train_auc_roc, test_auc_roc = build_model(train_X, train_y, test_X, test_y)
+  utils.log("FFM train", train_auc_roc)
+  utils.log("FFM train", test_auc_roc)
+  daemonize(predict_ffm, "stop")
+  model.save_model(config['model_path'] + "model.bin")
+  joblib.dump(mappings, config['model_path'] + "mappings.pkl")
+  daemonize(predict_ffm, "start")

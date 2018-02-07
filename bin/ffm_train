@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from golosio_recommendation_model.model.train.ffm import run_ffm
+from golosio_recommendation_model.model.train.ffm import train_ffm
 from golosio_recommendation_model.daemonize import daemonize
 import sys
 
-daemonize(run_ffm, sys.argv[1])
+daemonize(train_ffm, sys.argv[1])

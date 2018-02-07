@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from golosio_recommendation_model.server.server import run_server
+from golosio_recommendation_model.server.server import run_recommendations_server
 from golosio_recommendation_model.daemonize import daemonize
 import sys
 
-daemonize(run_server, sys.argv[1])
+daemonize(run_recommendations_server, sys.argv[1])
