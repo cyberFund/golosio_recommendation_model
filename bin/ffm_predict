@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
 
 from golosio_recommendation_model.model.predict.ffm import run_ffm
-from golosio_recommendation_model.config import config
-from daemons.prefab import run
+from golosio_recommendation_model.daemonize import daemonize
 import sys
 
-class FFMPredictDaemon(run.RunDaemon):
-  def run(self):
-    while True:
-      run_ffm(config['database_url'], config['database_name'])
-
-daemon = FFMPredictDaemon(pidfile='/tmp/ffm_predict.pid')
-if (sys.argv[1] == "start"):
-  daemon.start()
-elif (sys.argv[1] == "stop"):
-  daemon.stop()
+daemonize(run_ffm, sys.argv[1])

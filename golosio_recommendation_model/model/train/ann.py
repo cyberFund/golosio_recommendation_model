@@ -119,7 +119,7 @@ def save_similar_posts(url, database, posts, vectors, model):
   utils.unlock_mutex(url, database, "similar_posts")
 
 @utils.error_log("ANN train")
-def run_ann(database_url, database_name):
+def run_ann():
   """
     Function to run ANN process:
     - Get posts from mongo
@@ -127,22 +127,23 @@ def run_ann(database_url, database_name):
     - Create and train ANN model from vectorized posts
     - Save similar posts to mongo database
   """
-  utils.log("ANN train", "Get posts...")
-  posts = get_posts(database_url, database_name)
-  utils.log("ANN train", "Prepare posts...")
-  vectors, popular_tags, popular_categorical = prepare_posts(posts)
-  joblib.dump(popular_tags, config['model_path'] + "popular_tags.pkl")
-  joblib.dump(popular_categorical, config['model_path'] + "popular_categorical.pkl")
-  vectors.to_csv(config['model_path'] + "vectors.csv")
-  utils.log("ANN train", "Prepare model...")
-  model = create_model(vectors)
-  utils.log("ANN train", "Train model...")
-  train_model(model)
-  model.save(config['model_path'] + "similar.ann")
-  utils.log("ANN train", "Save similar posts...")
-  all_posts = get_posts(database_url, database_name)
-  all_vectors, popular_tags, popular_categorical = prepare_posts(all_posts, popular_tags, popular_categorical)
-  save_similar_posts(database_url, database_name, all_posts, all_vectors, model)
+  database_url = config['database_url']
+  database_name = config['database_name']
 
-if (__name__ == "__main__"):
-  run_ann(sys.argv[1], sys.argv[2])
+  while True:
+    utils.log("ANN train", "Get posts...")
+    posts = get_posts(database_url, database_name)
+    utils.log("ANN train", "Prepare posts...")
+    vectors, popular_tags, popular_categorical = prepare_posts(posts)
+    joblib.dump(popular_tags, config['model_path'] + "popular_tags.pkl")
+    joblib.dump(popular_categorical, config['model_path'] + "popular_categorical.pkl")
+    vectors.to_csv(config['model_path'] + "vectors.csv")
+    utils.log("ANN train", "Prepare model...")
+    model = create_model(vectors)
+    utils.log("ANN train", "Train model...")
+    train_model(model)
+    model.save(config['model_path'] + "similar.ann")
+    utils.log("ANN train", "Save similar posts...")
+    all_posts = get_posts(database_url, database_name)
+    all_vectors, popular_tags, popular_categorical = prepare_posts(all_posts, popular_tags, popular_categorical)
+    save_similar_posts(database_url, database_name, all_posts, all_vectors, model)

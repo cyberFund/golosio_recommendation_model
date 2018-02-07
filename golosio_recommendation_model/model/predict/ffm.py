@@ -58,7 +58,7 @@ def save_recommendations(recommendations, url, database):
   db.recommendation.insert_many(recommendations.to_dict('records'))
 
 @utils.error_log("FFM")
-def run_ffm(database_url, database):
+def run_ffm():
   """
     Function to run prediction process:
     - Get all posts in a model
@@ -68,23 +68,24 @@ def run_ffm(database_url, database):
     - Get FFM predictions
     - Save recommendations to a mongo database
   """
-  utils.log("FFM", "Get posts...")
-  posts = get_posts(database_url, database)
-  utils.log("FFM", "Create dataset...")
-  events = utils.get_events(database_url, database)
-  dataset = create_dataset(posts, events)
-  utils.log("FFM", "Extend events...")
-  dataset = extend_events(dataset, posts)
+  database_url = config['database_url']
+  database = config['database_name']
   utils.log("FFM", "Prepare model...")
   utils.wait_for_file(config['model_path'] + 'model.bin')
   model = ffm.read_model(config['model_path'] + "model.bin")
   utils.wait_for_file(config['model_path'] + 'mappings.pkl')
   mappings = joblib.load(config['model_path'] + "mappings.pkl")
-  mappings, ffm_dataset_X, ffm_dataset_y = create_ffm_dataset(dataset, mappings)
-  ffm_dataset = ffm.FFMData(ffm_dataset_X, ffm_dataset_y)
-  dataset["prediction"] = model.predict(ffm_dataset)
-  utils.log("FFM", "Save recommendations...")
-  save_recommendations(dataset[["user_id", "post_permlink", "prediction"]], database_url, database)
-
-if (__name__ == "__main__"):
-  predict(sys.argv[1], sys.argv[2])
+  
+  while True:
+    utils.log("FFM", "Get posts...")
+    posts = get_posts(database_url, database)
+    utils.log("FFM", "Create dataset...")
+    events = utils.get_events(database_url, database)
+    dataset = create_dataset(posts, events)
+    utils.log("FFM", "Extend events...")
+    dataset = extend_events(dataset, posts)
+    mappings, ffm_dataset_X, ffm_dataset_y = create_ffm_dataset(dataset, mappings)
+    ffm_dataset = ffm.FFMData(ffm_dataset_X, ffm_dataset_y)
+    dataset["prediction"] = model.predict(ffm_dataset)
+    utils.log("FFM", "Save recommendations...")
+    save_recommendations(dataset[["user_id", "post_permlink", "prediction"]], database_url, database)

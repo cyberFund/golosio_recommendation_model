@@ -1,15 +1,7 @@
 #!/usr/bin/env python3
 
 from golosio_recommendation_model.sync.sync_comments import sync_comments 
+from golosio_recommendation_model.daemonize import daemonize
 import sys
-from daemons.prefab import run
 
-class SyncCommentsDaemon(run.RunDaemon):
-  def run(self):
-    sync_comments()
-
-daemon = SyncCommentsDaemon(pidfile='/tmp/sync_comments.pid')
-if (sys.argv[1] == "start"):
-  daemon.start()
-elif (sys.argv[1] == "stop"):
-  daemon.stop()
+daemonize(sync_comments, sys.argv[1])

@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
 
 from golosio_recommendation_model.model.predict.ann import run_ann
-from golosio_recommendation_model.config import config
-from daemons.prefab import run
+from golosio_recommendation_model.daemonize import daemonize
 import sys
 
-class ANNPredictDaemon(run.RunDaemon):
-  def run(self):
-    while True:
-      run_ann(config['database_url'], config['database_name'])
-
-daemon = ANNPredictDaemon(pidfile='/tmp/ann_predict.pid')
-if (sys.argv[1] == "start"):
-  daemon.start()
-elif (sys.argv[1] == "stop"):
-  daemon.stop()
+daemonize(run_ann, sys.argv[1])

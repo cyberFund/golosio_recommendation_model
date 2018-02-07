@@ -120,7 +120,7 @@ def save_document_vectors(url, database, posts, texts, model):
   utils.unlock_mutex(url, database, "inferred_vector")  
 
 @utils.error_log("Doc2Vec train")
-def run_doc2vec(database_url, database_name):
+def run_doc2vec():
   """
     Function to run Doc2Vec process:
     - Get all posts from mongo
@@ -128,16 +128,17 @@ def run_doc2vec(database_url, database_name):
     - Create Doc2Vec model
     - Find and save Doc2Vec vectors for each model
   """
-  utils.log("Doc2Vec train", "Get posts...")
-  posts = get_posts(database_url, database_name)
-  utils.log("Doc2Vec train", "Prepare posts...")
-  texts, usable_texts = prepare_posts(posts)
-  utils.log("Doc2Vec train", "Prepare model...")
-  model = create_model(usable_texts)
-  utils.log("Doc2Vec train", "Save vectors...")
-  all_posts = get_posts(database_url, database_name)
-  all_texts, all_usable_texts = prepare_posts(all_posts)
-  save_document_vectors(database_url, database_name, all_posts, all_texts, model)
+  database_url = config['database_url']
+  database_name = config['database_name']
 
-if (__name__ == "__main__"):
-  run_doc2vec(sys.argv[1], sys.argv[2])
+  while True:
+    utils.log("Doc2Vec train", "Get posts...")
+    posts = get_posts(database_url, database_name)
+    utils.log("Doc2Vec train", "Prepare posts...")
+    texts, usable_texts = prepare_posts(posts)
+    utils.log("Doc2Vec train", "Prepare model...")
+    model = create_model(usable_texts)
+    utils.log("Doc2Vec train", "Save vectors...")
+    all_posts = get_posts(database_url, database_name)
+    all_texts, all_usable_texts = prepare_posts(all_posts)
+    save_document_vectors(database_url, database_name, all_posts, all_texts, model)

@@ -13,17 +13,19 @@ def get_posts(url, database):
   return utils.preprocess_posts(posts)
 
 @utils.error_log("Doc2Vec predict")
-def run_doc2vec(database_url, database_name):
-  utils.log("Doc2Vec predict", "Get posts...")
-  posts = get_posts(database_url, database_name)
-  if posts.shape[0] > 0:
-    utils.log("Doc2Vec predict", "Prepare posts...")
-    texts, usable_texts = prepare_posts(posts)
-    utils.log("Doc2Vec predict", "Restore model...")
-    utils.wait_for_file(config['model_path'] + 'golos.doc2vec_model')
-    model = models.doc2vec.Doc2Vec.load(config['model_path'] + 'golos.doc2vec_model')
-    utils.log("Doc2Vec predict", "Save inferred vectors...")
-    save_document_vectors(database_url, database_name, posts, texts, model)
+def run_doc2vec():
+  database_url = config['database_url']
+  database_name = config['database_name']
+  utils.log("Doc2Vec predict", "Restore model...")
+  utils.wait_for_file(config['model_path'] + 'golos.doc2vec_model')
+  model = models.doc2vec.Doc2Vec.load(config['model_path'] + 'golos.doc2vec_model')
 
-if (__name__ == "__main__"):
-  run_doc2vec(sys.argv[1], sys.argv[2])
+  while True:
+    utils.wait_between_iterations()
+    utils.log("Doc2Vec predict", "Get posts...")
+    posts = get_posts(database_url, database_name)
+    if posts.shape[0] > 0:
+      utils.log("Doc2Vec predict", "Prepare posts...")
+      texts, usable_texts = prepare_posts(posts)
+      utils.log("Doc2Vec predict", "Save inferred vectors...")
+      save_document_vectors(database_url, database_name, posts, texts, model)

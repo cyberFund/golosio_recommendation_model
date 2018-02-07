@@ -104,7 +104,7 @@ def build_model(train_X, train_y, test_X, test_y):
   return model, 1, 1
 
 @utils.error_log("FFM train")
-def run_ffm(database_url, database):
+def run_ffm():
   """
     Function to train FFM model
     - Get all events from mongo database
@@ -114,37 +114,38 @@ def run_ffm(database_url, database):
     - Build model with chosen train and test set
     - Save trained model
   """
-  utils.log("FFM train", "Prepare events...")
-  events = utils.get_events(database_url, database)
+  database_url = config['database_url']
+  database = config['database_name']
 
-  events.to_csv(config['model_path'] + "prepared_events.csv")
-  # events = pd.read_csv("prepared_events.csv").drop(["Unnamed: 0"], axis=1)
+  while True: 
+    utils.log("FFM train", "Prepare events...")
+    events = utils.get_events(database_url, database)
 
-  utils.log("FFM train", "Prepare posts...")
-  posts = get_posts(database_url, database, events)
+    events.to_csv(config['model_path'] + "prepared_events.csv")
+    # events = pd.read_csv("prepared_events.csv").drop(["Unnamed: 0"], axis=1)
 
-  posts.to_csv(config['model_path'] + "prepared_posts.csv")
-  # posts = pd.read_csv("prepared_posts.csv").drop(["Unnamed: 0"], axis=1)
+    utils.log("FFM train", "Prepare posts...")
+    posts = get_posts(database_url, database, events)
 
-  utils.log("FFM train", "Extend events...")
-  events = extend_events(events, posts)
+    posts.to_csv(config['model_path'] + "prepared_posts.csv")
+    # posts = pd.read_csv("prepared_posts.csv").drop(["Unnamed: 0"], axis=1)
 
-  utils.log("FFM train", "Save events...")
-  events.to_csv(config['model_path'] + "extended_events.csv")
+    utils.log("FFM train", "Extend events...")
+    events = extend_events(events, posts)
 
-  # events = pd.read_csv("extended_events.csv").drop(["Unnamed: 0"], axis=1)
+    utils.log("FFM train", "Save events...")
+    events.to_csv(config['model_path'] + "extended_events.csv")
 
-  utils.log("FFM train", "Create ffm dataset...")
-  mappings, X, y = create_ffm_dataset(events)
-  joblib.dump(X, config['model_path'] + "X.pkl")
-  joblib.dump(y, config['model_path'] + "y.pkl")
-  train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
-  utils.log("FFM train", "Build model...")
-  model, train_auc_roc, test_auc_roc = build_model(train_X, train_y, test_X, test_y)
-  utils.log("FFM train", train_auc_roc)
-  utils.log("FFM train", test_auc_roc)
-  model.save_model(config['model_path'] + "model.bin")
-  joblib.dump(mappings, config['model_path'] + "mappings.pkl")
+    # events = pd.read_csv("extended_events.csv").drop(["Unnamed: 0"], axis=1)
 
-if (__name__ == "__main__"):
-  train(sys.argv[1], sys.argv[2])
+    utils.log("FFM train", "Create ffm dataset...")
+    mappings, X, y = create_ffm_dataset(events)
+    joblib.dump(X, config['model_path'] + "X.pkl")
+    joblib.dump(y, config['model_path'] + "y.pkl")
+    train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
+    utils.log("FFM train", "Build model...")
+    model, train_auc_roc, test_auc_roc = build_model(train_X, train_y, test_X, test_y)
+    utils.log("FFM train", train_auc_roc)
+    utils.log("FFM train", test_auc_roc)
+    model.save_model(config['model_path'] + "model.bin")
+    joblib.dump(mappings, config['model_path'] + "mappings.pkl")

@@ -2,7 +2,10 @@
 
 from golosio_recommendation_model.sync.sync_events import sync_events 
 from golosio_recommendation_model.sync.convert_events import convert_events 
-from golosio_recommendation_model.config import config
+from golosio_recommendation_model.daemonize import daemonize
 
-sync_events(config['database_url'], config['database_name'], config['events_path'])
-convert_events(config['database_url'], config['database_name'])
+def main():
+  sync_events()
+  convert_events()
+
+daemonize(main, sys.argv[1])

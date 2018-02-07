@@ -217,3 +217,6 @@ def wait_for_file(file):
   log(file, "Waiting...")
   while not os.path.isfile(file):
     sleep(3)
+
+def wait_between_iterations():
+  sleep(5 * 60)
