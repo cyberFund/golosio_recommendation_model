@@ -13,6 +13,7 @@ import sys
 import dask.dataframe as dd
 from tqdm import *
 import datetime as dt
+from golosio_recommendation_model.config import config
 
 MODEL_PARAMETERS = {
   'eta': 0.1, 
@@ -116,34 +117,34 @@ def run_ffm(database_url, database):
   utils.log("FFM train", "Prepare events...")
   events = utils.get_events(database_url, database)
 
-  events.to_csv("prepared_events.csv")
+  events.to_csv(config['model_path'] + "prepared_events.csv")
   # events = pd.read_csv("prepared_events.csv").drop(["Unnamed: 0"], axis=1)
 
   utils.log("FFM train", "Prepare posts...")
   posts = get_posts(database_url, database, events)
 
-  posts.to_csv("prepared_posts.csv")
+  posts.to_csv(config['model_path'] + "prepared_posts.csv")
   # posts = pd.read_csv("prepared_posts.csv").drop(["Unnamed: 0"], axis=1)
 
   utils.log("FFM train", "Extend events...")
   events = extend_events(events, posts)
 
   utils.log("FFM train", "Save events...")
-  events.to_csv("extended_events.csv")
+  events.to_csv(config['model_path'] + "extended_events.csv")
 
   # events = pd.read_csv("extended_events.csv").drop(["Unnamed: 0"], axis=1)
 
   utils.log("FFM train", "Create ffm dataset...")
   mappings, X, y = create_ffm_dataset(events)
-  joblib.dump(X, "./X.pkl")
-  joblib.dump(y, "./y.pkl")
+  joblib.dump(X, config['model_path'] + "X.pkl")
+  joblib.dump(y, config['model_path'] + "y.pkl")
   train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
   utils.log("FFM train", "Build model...")
   model, train_auc_roc, test_auc_roc = build_model(train_X, train_y, test_X, test_y)
   utils.log("FFM train", train_auc_roc)
   utils.log("FFM train", test_auc_roc)
-  model.save_model("./model.bin")
-  joblib.dump(mappings, "./mappings.pkl")
+  model.save_model(config['model_path'] + "model.bin")
+  joblib.dump(mappings, config['model_path'] + "mappings.pkl")
 
 if (__name__ == "__main__"):
   train(sys.argv[1], sys.argv[2])

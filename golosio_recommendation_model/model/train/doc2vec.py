@@ -9,6 +9,7 @@ from gensim import corpora, models
 import pdb
 import datetime as dt
 from tqdm import *
+from golosio_recommendation_model.config import config
 
 WORD_LENGTH_QUANTILE = 10
 TEXT_LENGTH_QUANTILE = 66
@@ -101,7 +102,7 @@ def create_model(texts):
   """
   corpus = create_corpus(texts)
   model = train_model(corpus)
-  model.save('golos.doc2vec_model')
+  model.save(config['model_path'] + 'golos.doc2vec_model')
   return model
 
 def save_document_vectors(url, database, posts, texts, model):

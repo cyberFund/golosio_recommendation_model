@@ -10,6 +10,7 @@ from annoy import AnnoyIndex
 from sklearn.preprocessing import quantile_transform
 import datetime as dt
 from sklearn.externals import joblib
+from golosio_recommendation_model.config import config
 
 NUMBER_OF_TREES = 1000
 NUMBER_OF_RECOMMENDATIONS = 10
@@ -130,14 +131,14 @@ def run_ann(database_url, database_name):
   posts = get_posts(database_url, database_name)
   utils.log("ANN train", "Prepare posts...")
   vectors, popular_tags, popular_categorical = prepare_posts(posts)
-  joblib.dump(popular_tags, "./popular_tags.pkl")
-  joblib.dump(popular_categorical, "./popular_categorical.pkl")
-  vectors.to_csv("./vectors.csv")
+  joblib.dump(popular_tags, config['model_path'] + "popular_tags.pkl")
+  joblib.dump(popular_categorical, config['model_path'] + "popular_categorical.pkl")
+  vectors.to_csv(config['model_path'] + "vectors.csv")
   utils.log("ANN train", "Prepare model...")
   model = create_model(vectors)
   utils.log("ANN train", "Train model...")
   train_model(model)
-  model.save("similar.ann")
+  model.save(config['model_path'] + "similar.ann")
   utils.log("ANN train", "Save similar posts...")
   all_posts = get_posts(database_url, database_name)
   all_vectors, popular_tags, popular_categorical = prepare_posts(all_posts, popular_tags, popular_categorical)

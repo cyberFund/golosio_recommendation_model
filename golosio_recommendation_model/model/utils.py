@@ -7,15 +7,15 @@ from nltk.tokenize import RegexpTokenizer
 from pymystem3 import Mystem
 import numpy as np
 from pymongo import MongoClient, DESCENDING
-import pdb
 from tqdm import *
 import logging
 from time import sleep
 from functools import wraps
 import pandas as pd
 import os
+from golosio_recommendation_model.config import config
 
-logging.basicConfig(filename='model.log', format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+logging.basicConfig(filename=config['log_path'], format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 stopwords_list = stopwords.words('russian')
 tokenizer = RegexpTokenizer(r'\w+')

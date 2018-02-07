@@ -10,6 +10,7 @@ import sys
 from tqdm import *
 import pdb
 import datetime as dt
+from golosio_recommendation_model.config import config
 
 USERS_POSTS_LIMIT = 100 # Max number of recommendations
 
@@ -50,7 +51,7 @@ def create_dataset(posts, events):
   return dataset
 
 def save_recommendations(recommendations, url, database):
-  recommendations.to_csv("recommendations.csv")
+  recommendations.to_csv(config['model_path'] + "recommendations.csv")
   client = MongoClient(url)
   db = client[database]
   db.recommendation.drop()
@@ -75,10 +76,10 @@ def run_ffm(database_url, database):
   utils.log("FFM", "Extend events...")
   dataset = extend_events(dataset, posts)
   utils.log("FFM", "Prepare model...")
-  utils.wait_for_file('model.bin')
-  model = ffm.read_model("model.bin")
-  utils.wait_for_file('mappings.pkl')
-  mappings = joblib.load("mappings.pkl")
+  utils.wait_for_file(config['model_path'] + 'model.bin')
+  model = ffm.read_model(config['model_path'] + "model.bin")
+  utils.wait_for_file(config['model_path'] + 'mappings.pkl')
+  mappings = joblib.load(config['model_path'] + "mappings.pkl")
   mappings, ffm_dataset_X, ffm_dataset_y = create_ffm_dataset(dataset, mappings)
   ffm_dataset = ffm.FFMData(ffm_dataset_X, ffm_dataset_y)
   dataset["prediction"] = model.predict(ffm_dataset)
