@@ -4,4 +4,12 @@ from golosio_recommendation_model.sync.sync_comments import sync_comments
 import sys
 from daemons.prefab import run
 
-sync_comments()
+class SyncCommentsDaemon(run.RunDaemon):
+  def run(self):
+    sync_comments()
+
+daemon = SyncCommentsDaemon(pidfile='/tmp/sync_comments.pid')
+if (sys.argv[1] == "start"):
+  daemon.start()
+elif (sys.argv[1] == "stop"):
+  daemon.stop()

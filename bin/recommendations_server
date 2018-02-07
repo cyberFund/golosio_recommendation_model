@@ -4,4 +4,12 @@ from golosio_recommendation_model.server.server import run_server
 import sys
 from daemons.prefab import run
 
-run_server()
+class ServerDaemon(run.RunDaemon):
+  def run(self):
+    run_server()
+
+daemon = ServerDaemon(pidfile='/tmp/recommendations_server.pid')
+if (sys.argv[1] == "start"):
+  daemon.start()
+elif (sys.argv[1] == "stop"):
+  daemon.stop()

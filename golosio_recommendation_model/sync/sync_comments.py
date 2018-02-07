@@ -21,10 +21,10 @@ db = mongo[config['database_name']]
 
 # Calculated last block
 init = db.status.find_one({'_id': 'height'})
+last_block = 1
+
 if(init):
   last_block = init['value']
-else:
-  last_block = 1
 
 # ------------
 # For development:
