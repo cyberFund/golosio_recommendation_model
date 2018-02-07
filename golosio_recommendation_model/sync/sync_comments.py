@@ -9,14 +9,15 @@ import time
 import sys
 import os
 from tqdm import tqdm
+from golosio_recommendation_model.config import config
 # import pistonapi as steemapi
 
 # Golos node params
-rpc = SteemNodeRPC(sys.argv[1], apis=["follow", "database"])
+rpc = SteemNodeRPC(config['node_url'], apis=["follow", "database"])
 # MongoDB params
-mongo = MongoClient()
+mongo = MongoClient(config['database_url'])
 # Database name in MongoDB
-db = mongo.golos_comments
+db = mongo[config['database_name']]
 
 # Calculated last block
 init = db.status.find_one({'_id': 'height'})

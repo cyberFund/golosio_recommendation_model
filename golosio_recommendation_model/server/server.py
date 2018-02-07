@@ -7,9 +7,10 @@ from pymongo import MongoClient
 import pandas as pd
 import pdb
 from golosio_recommendation_model.model.utils import get_events
+from golosio_recommendation_model.config import config
 
-database_url = sys.argv[1]
-database_name = sys.argv[2]
+database_url = config['database_url']
+database_name = config['database_name']
 events = get_events(database_url, database_name)
 
 app = Flask(__name__)
