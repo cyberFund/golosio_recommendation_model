@@ -2,7 +2,7 @@
 
 from golosio_recommendation_model.sync.sync_events import sync_events 
 from golosio_recommendation_model.sync.convert_events import convert_events 
-import sys
+from golosio_recommendation_model.config import config
 
-sync_events(sys.argv[1], sys.argv[2], sys.argv[3])
-convert_events(sys.argv[1], sys.argv[2])
+sync_events(config['database_url'], config['database_name'], config['events_path'])
+convert_events(config['database_url'], config['database_name'])

@@ -5,6 +5,7 @@ This repo contains files of recommendation system for golos.io
 ```
 .
 +-- golosio_recommendation_model
+   +-- config.py - Overall model configuration
    +-- server
       +-- server.py - Flask server for recommendation system
       +-- config.py - Server configuration
@@ -33,17 +34,7 @@ $ scp earth@earth.cyber.fund:~/Documents/golosio-recommendation-model/golosio-re
 $ scp earth@earth.cyber.fund:~/Documents/golosio-recommendation-model/golosio-recommendation-dump-event.json ./
 ```
 
-Install a package with:
-```bash
-$ pip3 install .
-```
-
-To load comments from golos node, run:
-```bash
-$ sync_comments NODE_WS_URL
-```
-
-To load events to a mongo database from mysql database, use this sql to create csv:
+To load events to a mongo database from mysql database later, use this sql to create csv with new events from some period:
 ```sql
 SELECT user_id, event_type, value, refurl, created_at
 FROM golos.web_events 
@@ -55,30 +46,38 @@ INTO OUTFILE 'PATH_TO_CSV'
 FIELDS TERMINATED BY ',' 
 ENCLOSED BY '"';
 ```
-Then use created file in these scripts:
-```bash
-$ sync_events MONGO_HOST:MONGO_PORT MONGO_DATABASE PATH_TO_CSV
+
+Prepare config file before installation. It looks like this:
+```python
+# config.py
+config = {
+  'database_url': "localhost:27017", # Your mongo database url
+  'database_name': "golos_comments", # Mongo database with content from dumps
+  'events_path': "test_events.csv", # Path to csv file with events
+  'node_url': 'ws://localhost:8090' # Golos.io websocket url for comments synchronization
+}
 ```
 
-To add tasks for model rebuild to a cron tab, use:
+Install a package with:
 ```bash
-$ install.sh DATABASE_HOST:DATABASE_PORT DATABASE_NAME
+$ pip3 install .
 ```
 
-For example:
-```bash
-$ install.sh localhost:27017 golos_comments
-```
-
-To remove tasks from cron tab, run:
-```bash
-$ uninstall.sh
-```
 # Architecture
 
 Recommendation model architecture: ![Recommendation model architecture](architecture.png)
 
 # How to use it
+
+To run model daemons, use:
+```bash
+$ start.sh
+```
+
+To stop daemons, run:
+```bash
+$ stop.sh
+```
 
 To start server, run:
 ```bash
@@ -176,6 +175,7 @@ $ curl http://localhost:8080/recommendations?user=58158
 ```
 
 # Configuration
+**Update needed!**
 
 You can change service port here:
 

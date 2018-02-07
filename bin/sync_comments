@@ -2,5 +2,6 @@
 
 from golosio_recommendation_model.sync.sync_comments import sync_comments 
 import sys
+from daemons.prefab import run
 
 sync_comments()

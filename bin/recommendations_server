@@ -2,5 +2,6 @@
 
 from golosio_recommendation_model.server.server import run_server
 import sys
+from daemons.prefab import run
 
 run_server()
