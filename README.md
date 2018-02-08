@@ -4,22 +4,45 @@ This repo contains files of recommendation system for golos.io
 
 ```
 .
-+-- install.sh
-+-- run.sh
-+-- uninstall.sh
-+-- gdisk - Tool to download first version of model from google drive 
-+-- server.py - Flask server for recommendation system
-+-- sync
-   +-- convert_events.py - Convert events in MongoDB for training FFM model
-   +-- sync_comments.py - Synchronizing MongoDB with Golos node
-   +-- sync_events.py - Synchronizing Golosio MySQL with MongoDB
-+-- model
-   +-- utils.py - Helpers for preprocessing, processes regulation and etc.
-   +-- ann.py - Process of finding similar posts
-   +-- doc2vec.py - Process of finding doc2vec vectors for each post
-   +-- train.py - Process of training FFM model
-   +-- predict.py - Process of creating predictions
++-- install.sh - Bash script to fill crontab tasks for a model rebuilding
++-- uninstall.sh - Bash script to clean crontab and to stop all daemons
++-- setup.py - Package configuration
++-- golosio_recommendation_model
+   +-- config.py - Overall model configuration
+   +-- daemonize.py - Function for making daemon of a specified function
+   +-- server
+      +-- server.py - Flask server for recommendation system
+      +-- config.py - Server configuration
+   +-- sync
+      +-- convert_events.py - Convert events in MongoDB for training FFM model
+      +-- sync_comments.py - Synchronizing MongoDB with Golos node
+      +-- sync_events.py - Synchronizing Golosio MySQL with MongoDB
+   +-- model
+      +-- utils.py - Helpers for preprocessing, processes regulation and etc.
+      +-- train
+         +-- ann.py - Process of training model to find similar posts
+         +-- doc2vec.py - Process of training model to find doc2vec vectors for each post
+         +-- ffm.py - Process of training FFM model to arrange recommendations for each user
+      +-- predict
+         +-- ann.py - Process of finding similar posts for new posts in database
+         +-- doc2vec.py - Process of finding doc2vec vectors for each new post in database
+         +-- ffm.py - Process of creating recommendations list for each active user
++-- bin - These scripts will appear in /usr/local/bin directory
+   +-- doc2vec_train - Daemon that trains doc2vec model
+   +-- doc2vec_predict - Daemon that makes doc2vec predictions for all posts in database
+   +-- ann_train - Daemon that trains ANN model
+   +-- ann_predict - Daemon that makes ANN predictions for all posts in database
+   +-- ffm_train - Daemon that trains FFM model
+   +-- ffm_predict - Daemon that makes FFM predictions and stores them to a database
+   +-- recommendations_server - Daemon for a recommendation model server
+   +-- sync_comments - Daemon that loads new comments from a golos node to a database
+   +-- sync_events - Daemon that loads events from a specified csv file to a database
 ```
+
+# Architecture
+
+Recommendation model architecture: ![Recommendation model architecture](architecture.png)
+
 # Installation
 
 Install LibFFM before usage. Instruction can be found here: http://github.com/alexeygrigorev/libffm-python
@@ -30,12 +53,7 @@ $ scp earth@earth.cyber.fund:~/Documents/golosio-recommendation-model/golosio-re
 $ scp earth@earth.cyber.fund:~/Documents/golosio-recommendation-model/golosio-recommendation-dump-event.json ./
 ```
 
-To load comments from golos node, run:
-```bash
-$ python3 ./sync/sync_comments.py NODE_WS_URL
-```
-
-To load events to a mongo database from mysql database, use this sql to create csv:
+To load events to a mongo database from mysql database later, use this sql to create csv with new events from some period:
 ```sql
 SELECT user_id, event_type, value, refurl, created_at
 FROM golos.web_events 
@@ -47,40 +65,52 @@ INTO OUTFILE 'PATH_TO_CSV'
 FIELDS TERMINATED BY ',' 
 ENCLOSED BY '"';
 ```
-Then use created file in these scripts:
-```bash
-$ python3 ./sync/sync_events.py MONGO_HOST:MONGO_PORT MONGO_DATABASE PATH_TO_CSV
-$ python3 ./sync/convert_events.py MONGO_HOST:MONGO_PORT MONGO_DATABASE
+
+Prepare config file before installation. It should looks like this:
+```python
+# golosio_recommendation_model/config.py
+config = {
+  'database_url': "localhost:27017", # Your mongo database url
+  'database_name': "golos_comments", # Mongo database with dumps content
+  'events_path': "/home/anatoli/Documents/golosio_recommendation_model/test_events4.csv", # Path to csv file with events
+  'node_url': 'ws://localhost:8090', # Golos.io websocket url
+  'model_path': "/tmp/", # Path to model files
+  'log_path': "/tmp/recommendation_model.log", # Path to model log
+}
 ```
 
-To add tasks for model rebuild to a cron tab, use:
+Install a package with:
 ```bash
-$ install.sh DATABASE_HOST:DATABASE_PORT DATABASE_NAME
+$ pip3 install .
+```
+# How to use it
+
+To add model daemons to a crontab, use:
+```bash
+$ install.sh
+```
+This script will add train tasks to a crontab and will start comments synchronization. 
+
+It'll take some time to generate a new version of a model. For example, You'll get new model after a full day, if you ran installation script at 22:00. If you want to get first version as quickly as possible, run daemons manually:
+```bash
+$ doc2vec_train start
+$ ann_train start
+$ ffm_train start
 ```
 
-For example:
-```bash
-$ install.sh localhost:27017 golos_comments
-```
-
-To remove tasks from cron tab, run:
+To stop model daemons and to clean crontab, run:
 ```bash
 $ uninstall.sh
 ```
-# Architecture
 
-Recommendation model architecture: ![Recommendation model architecture](architecture.png)
-
-# How to use it
+To add new events to a database, run:
+```bash
+$ sync_events start
+```
 
 To start server, run:
 ```bash
-$ run.sh DATABASE_HOST:DATABASE_PORT DATABASE_NAME
-```
-
-For example:
-```bash
-$ run.sh localhost:27017 steemdb_1
+$ recommendations_server start
 ```
 
 To get supported user ids, run
@@ -169,20 +199,13 @@ $ curl http://localhost:8080/recommendations?user=58158
 ```
 
 # Configuration
+**Update needed!**
 
 You can change service port here:
 
 ```python
-# server.py
+# server/server.py
 port = 8080 # Use desired port
-```
-
-Play with constansts to change time window for recommended posts and number of recommendations for each user
-
-```python
-# model/predict.py
-USERS_POSTS_LIMIT = 100 # Max number of recommendations
-HOURS_LIMIT = 30 * 24 # Time window for recommended posts
 ```
 
 # Tests and logs

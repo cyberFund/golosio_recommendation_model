@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+
+from golosio_recommendation_model.model.predict.doc2vec import predict_doc2vec
+from golosio_recommendation_model.daemonize import daemonize
+import sys
+
+daemonize(predict_doc2vec, sys.argv[1])

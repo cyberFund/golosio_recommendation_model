@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+
+from golosio_recommendation_model.model.train.ann import train_ann
+from golosio_recommendation_model.daemonize import daemonize
+import sys
+
+daemonize(train_ann, sys.argv[1])

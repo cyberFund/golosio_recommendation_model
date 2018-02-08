@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+
+from golosio_recommendation_model.sync.sync_comments import sync_comments 
+from golosio_recommendation_model.daemonize import daemonize
+import sys
+
+daemonize(sync_comments, sys.argv[1])
