@@ -4,7 +4,7 @@ setup(
   name='golosio_recommendation_model',
   version='1.0.0',
   description='Recommendation system for golos.io',
-  url='https://github.com/cyberFund/golosio-recommendation-model',
+  url='https://github.com/cyberFund/golosio_recommendation_model',
   author='',
   author_email='',
   license='MIT',
