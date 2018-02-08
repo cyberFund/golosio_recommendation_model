@@ -89,7 +89,9 @@ To add model daemons to a crontab, use:
 ```bash
 $ install.sh
 ```
-This script will add train tasks to a crontab and will start comments synchronization. You'll get fully working model after its preparation, that can take a full day. If you want to get first result as quickly as possible, run daemons manually:
+This script will add train tasks to a crontab and will start comments synchronization. 
+
+It'll take some time to generate a new version of a model. For example, You'll get new model after a full day, if you ran installation script at 22:00. If you want to get first version as quickly as possible, run daemons manually:
 ```bash
 $ doc2vec_train start
 $ ann_train start
@@ -204,14 +206,6 @@ You can change service port here:
 ```python
 # server/server.py
 port = 8080 # Use desired port
-```
-
-Play with constansts to change time window for recommended posts and number of recommendations for each user
-
-```python
-# model/predict.py
-USERS_POSTS_LIMIT = 100 # Max number of recommendations
-HOURS_LIMIT = 30 * 24 # Time window for recommended posts
 ```
 
 # Tests and logs
