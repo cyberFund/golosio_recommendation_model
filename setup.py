@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
   name='golosio_recommendation_model',
-  version='0.1',
+  version='1.0.0',
   description='Recommendation system for golos.io',
   url='https://github.com/cyberFund/golosio-recommendation-model',
   author='',
