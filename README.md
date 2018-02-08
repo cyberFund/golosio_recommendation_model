@@ -4,8 +4,12 @@ This repo contains files of recommendation system for golos.io
 
 ```
 .
++-- install.sh - Bash script to fill crontab tasks for a model rebuilding
++-- uninstall.sh - Bash script to clean crontab and to stop all daemons
++-- setup.py - Package configuration
 +-- golosio_recommendation_model
    +-- config.py - Overall model configuration
+   +-- daemonize.py - Function for making daemon of a specified function
    +-- server
       +-- server.py - Flask server for recommendation system
       +-- config.py - Server configuration
@@ -23,7 +27,22 @@ This repo contains files of recommendation system for golos.io
          +-- ann.py - Process of finding similar posts for new posts in database
          +-- doc2vec.py - Process of finding doc2vec vectors for each new post in database
          +-- ffm.py - Process of creating recommendations list for each active user
++-- bin - These scripts will appear in /usr/local/bin directory
+   +-- doc2vec_train - Daemon that trains doc2vec model
+   +-- doc2vec_predict - Daemon that makes doc2vec predictions for all posts in database
+   +-- ann_train - Daemon that trains ANN model
+   +-- ann_predict - Daemon that makes ANN predictions for all posts in database
+   +-- ffm_train - Daemon that trains FFM model
+   +-- ffm_predict - Daemon that makes FFM predictions and stores them to a database
+   +-- recommendations_server - Daemon for a recommendation model server
+   +-- sync_comments - Daemon that loads new comments from a golos node to a database
+   +-- sync_events - Daemon that loads events from a specified csv file to a database
 ```
+
+# Architecture
+
+Recommendation model architecture: ![Recommendation model architecture](architecture.png)
+
 # Installation
 
 Install LibFFM before usage. Instruction can be found here: http://github.com/alexeygrigorev/libffm-python
@@ -47,14 +66,16 @@ FIELDS TERMINATED BY ','
 ENCLOSED BY '"';
 ```
 
-Prepare config file before installation. It looks like this:
+Prepare config file before installation. It should looks like this:
 ```python
-# config.py
+# golosio_recommendation_model/config.py
 config = {
   'database_url': "localhost:27017", # Your mongo database url
-  'database_name': "golos_comments", # Mongo database with content from dumps
-  'events_path': "test_events.csv", # Path to csv file with events
-  'node_url': 'ws://localhost:8090' # Golos.io websocket url for comments synchronization
+  'database_name': "golos_comments", # Mongo database with dumps content
+  'events_path': "/home/anatoli/Documents/golosio_recommendation_model/test_events4.csv", # Path to csv file with events
+  'node_url': 'ws://localhost:8090', # Golos.io websocket url
+  'model_path': "/tmp/", # Path to model files
+  'log_path': "/tmp/recommendation_model.log", # Path to model log
 }
 ```
 
@@ -62,31 +83,32 @@ Install a package with:
 ```bash
 $ pip3 install .
 ```
-
-# Architecture
-
-Recommendation model architecture: ![Recommendation model architecture](architecture.png)
-
 # How to use it
 
-To run model daemons, use:
+To add model daemons to a crontab, use:
 ```bash
-$ start.sh
+$ install.sh
+```
+This script will add train tasks to a crontab and will start comments synchronization. You'll get fully working model after its preparation, that can take a full day. If you want to get first result as quickly as possible, run daemons manually:
+```bash
+$ doc2vec_train start
+$ ann_train start
+$ ffm_train start
 ```
 
-To stop daemons, run:
+To stop model daemons and to clean crontab, run:
 ```bash
-$ stop.sh
+$ uninstall.sh
+```
+
+To add new events to a database, run:
+```bash
+$ sync_events start
 ```
 
 To start server, run:
 ```bash
-$ recommendations_server DATABASE_HOST:DATABASE_PORT DATABASE_NAME
-```
-
-For example:
-```bash
-$ recommendations_server localhost:27017 steemdb_1
+$ recommendations_server start
 ```
 
 To get supported user ids, run
