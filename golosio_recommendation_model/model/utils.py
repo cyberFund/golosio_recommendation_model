@@ -169,4 +169,4 @@ def error_log(model):
   return error_log_decorator
 
 def wait_between_iterations():
-  sleep(5 * 60)
+  sleep(10)

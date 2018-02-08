@@ -6,6 +6,11 @@ from golosio_recommendation_model.config import config
 from annoy import AnnoyIndex
 from sklearn.externals import joblib
 from time import sleep
+import pandas as pd
+from pymongo import MongoClient
+from tqdm import *
+
+NUMBER_OF_RECOMMENDATIONS = 10
 
 def get_posts(url, database):
   events = utils.get_events(url, database)

@@ -4,6 +4,11 @@ from gensim import models, corpora
 import pdb
 from golosio_recommendation_model.model.train.doc2vec import prepare_posts
 from golosio_recommendation_model.config import config
+from pymongo import MongoClient
+from tqdm import *
+
+DOC2VEC_STEPS = 2500
+DOC2VEC_ALPHA = 0.03
 
 def get_posts(url, database):
   events = utils.get_events(url, database)

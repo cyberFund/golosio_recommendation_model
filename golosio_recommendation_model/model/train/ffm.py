@@ -14,8 +14,8 @@ import dask.dataframe as dd
 from tqdm import *
 import datetime as dt
 from golosio_recommendation_model.config import config
-from golosio_recommendation_model.model.predict.ffm import predict_ffm
 from golosio_recommendation_model.daemonize import daemonize
+import os
 
 MODEL_PARAMETERS = {
   'eta': 0.1, 
@@ -148,7 +148,7 @@ def train_ffm():
   model, train_auc_roc, test_auc_roc = build_model(train_X, train_y, test_X, test_y)
   utils.log("FFM train", train_auc_roc)
   utils.log("FFM train", test_auc_roc)
-  daemonize(predict_ffm, "stop")
+  os.system("ffm_predict stop")
   model.save_model(config['model_path'] + "model.bin")
   joblib.dump(mappings, config['model_path'] + "mappings.pkl")
-  daemonize(predict_ffm, "start")
+  os.system("ffm_predict start")

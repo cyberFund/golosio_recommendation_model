@@ -10,8 +10,8 @@ import pdb
 import datetime as dt
 from tqdm import *
 from golosio_recommendation_model.config import config
-from golosio_recommendation_model.model.predict.doc2vec import predict_doc2vec
 from golosio_recommendation_model.daemonize import daemonize
+import os
 
 WORD_LENGTH_QUANTILE = 10
 TEXT_LENGTH_QUANTILE = 66
@@ -129,8 +129,8 @@ def train_doc2vec():
   texts, usable_texts = prepare_posts(posts)
   utils.log("Doc2Vec train", "Prepare model...")
   model = create_model(usable_texts)
-  daemonize(predict_doc2vec, "stop")
+  os.system("doc2vec_predict stop")
   utils.log("Doc2Vec train", "Save model...")
   model.save(config['model_path'] + 'golos.doc2vec_model')
   unset_inferred_vectors(database_url, database_name)
-  daemonize(predict_doc2vec, "start")
+  os.system("doc2vec_predict start")

@@ -11,8 +11,8 @@ from sklearn.preprocessing import quantile_transform
 import datetime as dt
 from sklearn.externals import joblib
 from golosio_recommendation_model.config import config
-from golosio_recommendation_model.model.predict.ann import predict_ann
 from golosio_recommendation_model.daemonize import daemonize
+import os
 
 NUMBER_OF_TREES = 1000
 NUMBER_OF_RECOMMENDATIONS = 10
@@ -128,11 +128,11 @@ def train_ann():
   model = create_model(vectors)
   utils.log("ANN train", "Train model...")
   train_model(model)
-  daemonize(predict_ann, "stop")
+  os.system("ann_predict stop")
   utils.log("ANN train", "Save model...")
   joblib.dump(popular_tags, config['model_path'] + "popular_tags.pkl")
   joblib.dump(popular_categorical, config['model_path'] + "popular_categorical.pkl")
   vectors.to_csv(config['model_path'] + "vectors.csv")
   model.save(config['model_path'] + "similar.ann")
   unset_similar_posts(database_url, database_name)
-  daemonize(predict_ann, "start")
+  os.system("ann_predict start")
