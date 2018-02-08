@@ -55,7 +55,7 @@ def save_recommendations(recommendations, url, database):
   db.recommendation.drop()
   db.recommendation.insert_many(recommendations.to_dict('records'))
 
-@utils.error_log("FFM")
+@utils.error_log("FFM predict")
 def predict_ffm():
   """
     Function to run prediction process:
@@ -68,20 +68,20 @@ def predict_ffm():
   """
   database_url = config['database_url']
   database = config['database_name']
-  utils.log("FFM", "Prepare model...")
+  utils.log("FFM predict", "Prepare model...")
   model = ffm.read_model(config['model_path'] + "model.bin")
   mappings = joblib.load(config['model_path'] + "mappings.pkl")
   
   while True:
-    utils.log("FFM", "Get posts...")
+    utils.log("FFM predict", "Get posts...")
     posts = get_posts(database_url, database)
-    utils.log("FFM", "Create dataset...")
+    utils.log("FFM predict", "Create dataset...")
     events = utils.get_events(database_url, database)
     dataset = create_dataset(posts, events)
-    utils.log("FFM", "Extend events...")
+    utils.log("FFM predict", "Extend events...")
     dataset = extend_events(dataset, posts)
     mappings, ffm_dataset_X, ffm_dataset_y = create_ffm_dataset(dataset, mappings)
     ffm_dataset = ffm.FFMData(ffm_dataset_X, ffm_dataset_y)
     dataset["prediction"] = model.predict(ffm_dataset)
-    utils.log("FFM", "Save recommendations...")
+    utils.log("FFM predict", "Save recommendations...")
     save_recommendations(dataset[["user_id", "post_permlink", "prediction"]], database_url, database)

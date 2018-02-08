@@ -11,3 +11,4 @@ ann_predict stop
 ffm_predict stop
 
 sync_comments stop
+recommendations_server stop
