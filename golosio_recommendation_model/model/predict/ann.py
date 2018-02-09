@@ -10,7 +10,7 @@ import pandas as pd
 from pymongo import MongoClient
 from tqdm import *
 
-NUMBER_OF_RECOMMENDATIONS = 10
+NUMBER_OF_RECOMMENDATIONS = 50
 
 def get_posts(url, database):
   events = utils.get_events(url, database)

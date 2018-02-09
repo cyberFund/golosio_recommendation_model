@@ -18,7 +18,7 @@ port = 8080 # Use desired port
 
 @app.route('/recommendations')
 def recommendations():
-  user = int(request.args.get("user"))
+  user = request.args.get("user")
   client = MongoClient(database_url)
   db = client[database_name]
   recommendations_df = pd.DataFrame(list(db.recommendation.find(
@@ -38,11 +38,11 @@ def recommendations():
 
 @app.route('/users')
 def users():
-  return jsonify(events["user_id"].unique().tolist())
+  return jsonify(events[events["like"] > 0.7]["user_id"].unique().tolist())
 
 @app.route('/history')
 def history():
-  user = int(request.args.get("user"))
+  user = request.args.get("user")
   user_events = events[(events["user_id"] == user) & (events["like"] > 0.7)]
   return jsonify(user_events["post_permlink"].unique().tolist())
 
@@ -65,9 +65,9 @@ def similar():
     return jsonify([])
 
 @app.route('/post_recommendations')
-def similar():
+def post_recommendations():
   permlink = request.args.get("permlink")
-  user = request.args.get("user_id")
+  user = request.args.get("user")
   client = MongoClient(database_url)
   db = client[database_name]
   comment = db.comment.find_one(
