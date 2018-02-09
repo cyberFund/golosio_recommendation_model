@@ -64,6 +64,36 @@ def similar():
   else:
     return jsonify([])
 
+@app.route('/post_recommendations')
+def similar():
+  permlink = request.args.get("permlink")
+  user = request.args.get("user_id")
+  client = MongoClient(database_url)
+  db = client[database_name]
+  comment = db.comment.find_one(
+    {
+      '_id': permlink[1:]
+    }, {
+      'committed_similar_posts': 1,
+      'committed_similar_distances': 1
+    }
+  )
+  recommendations_df = pd.DataFrame(list(db.recommendation.find(
+    {
+      'user_id': user,
+      'post_permlink': {"$in": comment['committed_similar_posts']}
+    }, {
+      'post_permlink': 1,
+      'prediction': 1
+    }
+  )))
+  if (recommendations_df.shape[0] > 0):
+    recommendations_df = recommendations_df.sort_values(["prediction"], ascending=[0])
+    recommendations_json = recommendations_df.drop(["_id"], axis=1).to_dict('records')
+    return jsonify(recommendations_json)
+  else:
+    return jsonify([])
+
 def run_recommendations_server():
   CORS(app)
   config(app)
