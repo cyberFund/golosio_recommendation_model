@@ -83,7 +83,6 @@ Install a package with:
 ```bash
 $ pip3 install .
 ```
-# How to use it
 
 To add model daemons to a crontab, use:
 ```bash
@@ -102,6 +101,8 @@ To stop model daemons and to clean crontab, run:
 ```bash
 $ uninstall.sh
 ```
+
+# How to use it
 
 To add new events to a database, run:
 ```bash
@@ -147,20 +148,39 @@ $ curl http://localhost:8080/similar?permlink=POST_PERMLINK
 For example:
 
 ```bash
-$ curl http://localhost:8080/similar?permlink=@gryph0n/podarochnyi-byteball
+$ curl http://localhost:8080/similar?permlink=@cka3ka/0x-zrx-naverno-zatuzemunit-skoro-50-50
 
-{
-  "@cryptojournal/bitpay-privlek-usd30-mln-v-ramkakh-finansirovaniya-serii-v": 0.0, 
-  "@cryptojournal/podrobnosti-obvala-na-krupneishei-v-mire-kriptovalyutnoi-birzhe-bitfinex": 0.0, 
-  "@ecoinmateus/relay-race11": 0.0, 
-  "@itsynergis/primer-socialnogo-blokcheina": 0.0, 
-  "@ituber/nem-obyavili-o-partnerstve-s-loyalcoin": 0.0, 
-  "@ituber/token-zcoin-dobavili-na-birzhu-bx-thailand": 0.0, 
-  "@liketerryfox/obzor-ico-57-sola-foundation-27-november-17-00-mck": 0.0, 
-  "@sibr.hus/summa-deneg-znachitelno-bolshaya-chem-mozhet-sobrat-etot-post-naidenaya-na-progulke": 0.0, 
-  "@the1arty/aventus-kakie-uslugi-vklyuchaet-v-sebya-platforma": 0.0, 
-  "@vesti/12-saitov-po-besplatnoi-razdache-altkoinov": 0.0
-}
+[
+  [
+    "@cka3ka/0x-zrx-naverno-zatuzemunit-skoro-50-50", 
+    0.00017143443983513862
+  ], 
+  [
+    "@cka3ka/golos-tuzemun", 
+    0.11337035149335861
+  ], 
+  [
+    "@cka3ka/3oo5vp-sozdatel-ethereum-vitalik-buterin-voshel-v-spisok-50", 
+    0.528253972530365
+  ], 
+  [
+    "@cka3ka/sozdatel-ethereum-vitalik-buterin-voshel-v-spisok-50", 
+    0.6705115437507629
+  ], 
+  [
+    "@cka3ka/bitcoin-stal-shestym-po-populyarnosti-sredi-mirovykh-valyut", 
+    0.7635799050331116
+  ], 
+  [
+    "@abdulazizov/v-zimbabe-bitkoin-likhoradka", 
+    0.9337025880813599
+  ], 
+  [
+    "@abdulazizov/bitcoin-fork", 
+    0.937701404094696
+  ],
+  ...
+]
 ```
 
 To get recommendations for specified user, run:
@@ -195,7 +215,36 @@ $ curl http://localhost:8080/recommendations?user=58158
   },
   ...
 ]
+```
 
+To get recommendations for specified user and specified post, run:
+
+```bash
+curl http://localhost:8080/post_recommendations?user=USER_ID&permlink=POST_PERMLINK
+```
+
+For example:
+```bash
+$ curl http://localhost:8080/post_recommendations?user=71116&permlink=@cka3ka/golos-tuzemun
+
+[
+  {
+    "post_permlink": "@cka3ka/0x-zrx-naverno-zatuzemunit-skoro-50-50", 
+    "prediction": 0.34954845905303955
+  }, 
+  {
+    "post_permlink": "@igrinov50-50/skonchalsya-leonid-bronevoi", 
+    "prediction": 0.3138478994369507
+  }, 
+  {
+    "post_permlink": "@ljpromo/isportilas-autentichnost", 
+    "prediction": 0.16339488327503204
+  }, 
+  {
+    "post_permlink": "@cka3ka/bitcoin-stal-shestym-po-populyarnosti-sredi-mirovykh-valyut", 
+    "prediction": 0.07751113921403885
+  }
+]
 ```
 
 # Configuration
