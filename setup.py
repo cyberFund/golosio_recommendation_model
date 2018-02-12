@@ -12,5 +12,6 @@ setup(
   zip_safe=False,
   scripts=['bin/ann_train', 'bin/doc2vec_train', 'bin/ffm_train',
           'bin/doc2vec_predict', 'bin/ann_predict', 'bin/ffm_predict',
-          'bin/recommendations_server', 'bin/sync_comments', 'bin/sync_events']
+          'bin/recommendations_server', 'bin/sync_comments', 'bin/sync_events',
+          'bin/sync_accounts']
 )

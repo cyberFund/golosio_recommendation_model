@@ -16,6 +16,28 @@ events = get_events(database_url, database_name)
 app = Flask(__name__)
 port = 8080 # Use desired port
 
+@app.route('/users')
+def users():
+  return jsonify(events[events["like"] > 0.7]["user_id"].unique().tolist())
+
+@app.route('/history')
+def history():
+  user = request.args.get("user")
+  user_events = events[(events["user_id"] == user) & (events["like"] > 0.7)]
+  return jsonify(user_events["post_permlink"].unique().tolist())
+
+@app.route('/user_id')
+def user_id():
+  user_name = request.args.get("user_name")
+  user = db.account.find(
+    {
+      'name': user_name
+    }, {
+      'user_id': 1
+    }
+  )
+  return jsonify(user)
+
 @app.route('/recommendations')
 def recommendations():
   user = request.args.get("user")
@@ -35,16 +57,6 @@ def recommendations():
     return jsonify(recommendations_json)
   else:
     return jsonify([])
-
-@app.route('/users')
-def users():
-  return jsonify(events[events["like"] > 0.7]["user_id"].unique().tolist())
-
-@app.route('/history')
-def history():
-  user = request.args.get("user")
-  user_events = events[(events["user_id"] == user) & (events["like"] > 0.7)]
-  return jsonify(user_events["post_permlink"].unique().tolist())
 
 @app.route('/similar')
 def similar():
