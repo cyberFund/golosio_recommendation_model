@@ -10,8 +10,8 @@ def sync_accounts():
   database = config['database_name']
   accounts_path = config['accounts_path']
   utils.log("Sync accounts", "Get accounts from a file...")
-  accounts = pd.read_csv(accounts_path, names=[])
+  accounts = pd.read_csv(accounts_path)
   client = MongoClient(url)
   db = client[database]
   db.account.drop()
-  db.account.insert_many(events.to_dict('records'))
+  db.account.insert_many(accounts.to_dict('records'))

@@ -3,6 +3,7 @@
 from golosio_recommendation_model.sync.sync_events import sync_events 
 from golosio_recommendation_model.sync.convert_events import convert_events 
 from golosio_recommendation_model.daemonize import daemonize
+import sys
 
 def main():
   sync_events()
