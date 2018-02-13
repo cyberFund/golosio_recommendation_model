@@ -274,13 +274,62 @@ $ curl http://localhost:8080/history?user=58158
 ```
 
 # Configuration
-**Update needed!**
+
+Overall service configuration situated in config.py file inside a package. You can additionally modify 
 
 You can change service port here:
 
 ```python
 # server/server.py
 port = 8080 # Use desired port
+```
+
+It's highly recommended not to play with the parameters, but you can do it at your own risk in these files:
+`` `python
+# sync/convert_comments.py
+...
+HOURS_LIMIT = 14 * 24 # Time window for events extraction. Bigger values ​makes recommendations 
+...
+# model/train/doc2vec.py
+...
+WORD_LENGTH_QUANTILE = 10 # Remove words shorter than 90%
+TEXT_LENGTH_QUANTILE = 66 # Remove texts shorter than 66%
+HIGH_WORD_FREQUENCY_QUANTILE = 99.5 # Remove words that appears more often than 99.5%
+LOW_WORD_FREQUENCY_QUANTILE = 60 # Remove words that appears less often than 30%
+# Parameters of doc2vec model. You can read about them in this article: https://radimrehurek.com/gensim/models/doc2vec.html
+DOC2VEC_PARAMETERS = {
+  'size': 300,
+  'window': 20,
+  'min_count': 5,
+  'workers': 13
+}
+...
+# model/train/ann.py
+...
+NUMBER_OF_TREES = 1000 # Number of trees in the ANN model. Bigger values ​​means slow prediction and high quality of result
+NUMBER_OF_VALUES = 1000 # Number of values ​​for one-hot encoding of categorical features. Bigger values ​​means slow preparation and high quality of result
+...
+# model/train/ffm.py
+...
+# FFM parameters. You can read about them in this article: https://github.com/alexeygrigorev/libffm-python
+MODEL_PARAMETERS = {
+  'eta': 0.1,
+  'lam': 0.01,
+  'k': 70
+}
+
+ITERATIONS = 10 # Iterations of training process
+WORKERS = 13 # Number of workers for dataset processing. Should be equal to AVAILABLE_CORES + 1
+...
+# model/predict/doc2vec.py
+...
+DOC2VEC_STEPS = 2500 # Number of steps for doc2vec model. Bigger values ​​means slow prediction and fast convergence
+DOC2VEC_ALPHA = 0.03 # Learning rate for doc2vec model. Bigger values ​​means fast prediction and slow convergence
+...
+# model/predict/ann.py
+...
+NUMBER_OF_RECOMMENDATIONS = 50 # Number of similar posts for a post
+...
 ```
 
 # Tests and logs
@@ -299,7 +348,6 @@ tail -f ./model.log
 
 # Timing
 Processing time:
-- lda - 1.5h
 - doc2vec - 1.5h
 - ann - 1h
 - train - 5h
