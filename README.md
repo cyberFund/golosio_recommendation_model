@@ -348,9 +348,15 @@ tail -f ./model.log
 
 # Timing
 Processing time:
-- doc2vec - 1.5h
-- ann - 1h
-- train - 5h
+- doc2vec - 2.5h
+-- train - 1.5h
+-- predict - 1h
+- ann - 2h
+-- train - 1h
+-- predict 1h
+- ffm - 5h
+-- train - 4h
+-- predict - 1h
 - predict - 2.5h
 
 Tested on a server with i7-5930K, 128Gb DDR-4, 1 Tb SSD-PCIe.
