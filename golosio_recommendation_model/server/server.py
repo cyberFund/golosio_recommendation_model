@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, render_template
-from .config import config
+from .config import config as config_flask
 import json
 from flask_cors import CORS
 import sys
@@ -28,15 +28,17 @@ def history():
 
 @app.route('/user_id')
 def user_id():
+  client = MongoClient(database_url)
+  db = client[database_name]
   user_name = request.args.get("user_name")
-  user = db.account.find(
+  user = db.account.find_one(
     {
       'name': user_name
     }, {
       'user_id': 1
     }
   )
-  return jsonify(user)
+  return jsonify({'user_id': user['user_id']})
 
 @app.route('/recommendations')
 def recommendations():
@@ -108,7 +110,7 @@ def post_recommendations():
 
 def run_recommendations_server():
   CORS(app)
-  config(app)
+  config_flask(app)
   app.run(port=port)
 
 if __name__ == '__main__':
