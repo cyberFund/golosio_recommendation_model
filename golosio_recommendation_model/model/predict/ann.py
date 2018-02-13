@@ -23,7 +23,7 @@ def get_posts(url, database):
 def estimate_number_of_features():
   return pd.read_csv(config['model_path'] + 'vectors.csv').shape[1] - 1
 
-def save_similar_posts(url, database, posts, vectors, model):
+def save_similar_posts(url, database, posts, vectors, ann_posts, model):
   """
     Function to save similar posts for each post within created model to mongo database
   """
@@ -33,7 +33,7 @@ def save_similar_posts(url, database, posts, vectors, model):
     post = posts.loc[index]
     vector = vectors.loc[index].tolist()
     similar_indices, similar_distances = model.get_nns_by_vector(vector, NUMBER_OF_RECOMMENDATIONS, include_distances=True)
-    similar_posts = posts.loc[similar_indices]["post_permlink"].tolist()
+    similar_posts = ann_posts.iloc[similar_indices]["post_permlink"].tolist()
     db.comment.update_one({'_id': post["post_permlink"][1:]}, {'$set': {'similar_posts': similar_posts, 'committed_similar_posts': similar_posts, 'similar_distances': similar_distances, 'committed_similar_distances': similar_distances}})
 
 @utils.error_log("ANN predict")
@@ -43,6 +43,7 @@ def predict_ann():
   utils.log("ANN predict", "Restore model...")
   popular_tags = joblib.load(config['model_path'] + "popular_tags.pkl")
   popular_categorical = joblib.load(config['model_path'] + "popular_categorical.pkl")
+  ann_posts = pd.read_csv(config['model_path'] + "ann_posts.csv")
   model = AnnoyIndex(estimate_number_of_features()) 
   model.load(config['model_path'] + 'similar.ann')
 
@@ -54,4 +55,4 @@ def predict_ann():
       utils.log("ANN predict", "Prepare posts...")
       vectors, popular_tags, popular_categorical = prepare_posts(posts, popular_tags, popular_categorical)
       utils.log("ANN predict", "Save similar posts...")
-      save_similar_posts(database_url, database_name, posts, vectors, model)
+      save_similar_posts(database_url, database_name, posts, vectors, ann_posts, model)
