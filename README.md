@@ -284,7 +284,7 @@ You can change service port here:
 port = 8080 # Use desired port
 ```
 
-It's highly recommended not to play with the parameters, but you can do it at your own risk in these files:
+It's highly recommended not to play with these parameters, but you can do it at your own risk in these files:
 ```python
 # sync/convert_comments.py
 ...
