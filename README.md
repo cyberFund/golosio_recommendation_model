@@ -285,7 +285,7 @@ port = 8080 # Use desired port
 ```
 
 It's highly recommended not to play with the parameters, but you can do it at your own risk in these files:
-`` `python
+```python
 # sync/convert_comments.py
 ...
 HOURS_LIMIT = 14 * 24 # Time window for events extraction. Bigger values ​makes recommendations 
