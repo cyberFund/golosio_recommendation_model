@@ -52,6 +52,6 @@ def predict_ann():
     posts = get_posts(database_url, database_name)
     if posts.shape[0] > 0:
       utils.log("ANN predict", "Prepare posts...")
-      vectors, popular_tags, popular_categorical = prepare_posts(posts)
+      vectors, popular_tags, popular_categorical = prepare_posts(posts, popular_tags, popular_categorical)
       utils.log("ANN predict", "Save similar posts...")
       save_similar_posts(database_url, database_name, posts, vectors, model)
