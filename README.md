@@ -16,7 +16,8 @@ This repo contains files of recommendation system for golos.io
    +-- sync
       +-- convert_events.py - Convert events in MongoDB for training FFM model
       +-- sync_comments.py - Synchronizing MongoDB with Golos node
-      +-- sync_events.py - Synchronizing Golosio MySQL with MongoDB
+      +-- sync_events.py - Synchronizing Golosio MySQL events with MongoDB
+      +-- sync_accounts.py - Synchronizing Golosio MySQL accounts with MongoDB
    +-- model
       +-- utils.py - Helpers for preprocessing, processes regulation and etc.
       +-- train
@@ -37,6 +38,7 @@ This repo contains files of recommendation system for golos.io
    +-- recommendations_server - Daemon for a recommendation model server
    +-- sync_comments - Daemon that loads new comments from a golos node to a database
    +-- sync_events - Daemon that loads events from a specified csv file to a database
+   +-- sync_accounts - Daemon that loads accounts from a specified csv file to a database
 ```
 
 # Architecture
@@ -73,6 +75,7 @@ config = {
   'database_url': "localhost:27017", # Your mongo database url
   'database_name': "golos_comments", # Mongo database with dumps content
   'events_path': "/home/anatoli/Documents/golosio_recommendation_model/test_events4.csv", # Path to csv file with events
+  'accounts_path': "/home/anatoli/Documents/golosio_recommendation_model/accounts.csv", # Path to csv file with accounts
   'node_url': 'ws://localhost:8090', # Golos.io websocket url
   'model_path': "/tmp/", # Path to model files
   'log_path': "/tmp/recommendation_model.log", # Path to model log
@@ -109,36 +112,17 @@ To add new events to a database, run:
 $ sync_events start
 ```
 
+To update accounts in a database, run:
+```bash
+$ sync_accounts start
+```
+
 To start server, run:
 ```bash
 $ recommendations_server start
 ```
 
-To get supported user ids, run
-```bash
-$ curl http://localhost:8080/users
-```
-
-To get history for some user, run:
-```bash
-$ curl http://localhost:8080/history?user=USER_ID
-```
-
-For example:
-```bash
-$ curl http://localhost:8080/history?user=58158
-
-[
-  "@vik/test-redaktora-dlya-botov-ot-vik-11-10", 
-  "@vox-populi/otchyot-kuratora-30-oktyabrya-5-noyabrya", 
-  "@vp-freelance/4kpmi-rezultaty-ezhenedelnogo-konkursa-luchshaya-rabota-po-itogam-nedeli", 
-  "@vp-freelance/khudozhestvennyi-perevod", 
-  "@vp-freelance/konkursnaya-rabota-16-odnazhdy-na-rabote-ikra-belugi", 
-  "@vp-freelance/realnosti-frilansa-mysli", 
-  "@vp-freelance/rezultaty-konkursa-odnazhdy-na-rabote-za-oktyabr-2017-goda", 
-  "@vp-freelance/treiding-kak-vid-frilansa"
-]
-```
+## Base server actions
 
 To get similar posts and distances to each of them for a specified one, run:
 ```bash
@@ -244,6 +228,48 @@ $ curl http://localhost:8080/post_recommendations?user=71116&permlink=@cka3ka/go
     "post_permlink": "@cka3ka/bitcoin-stal-shestym-po-populyarnosti-sredi-mirovykh-valyut", 
     "prediction": 0.07751113921403885
   }
+]
+```
+
+## Debug server actions
+
+To get supported user ids, run
+```bash
+$ curl http://localhost:8080/users
+```
+
+To find user id by username, run:
+```bash
+$ curl http://localhost:8080/user_id?user_name=USER_NAME
+```
+
+For example:
+```bash
+$ curl http://localhost:8080/user_id?user_name=smartcity-admin
+
+{
+  "user_id": 60837
+}
+```
+
+To get page views for some user, run:
+```bash
+$ curl http://localhost:8080/history?user=USER_ID
+```
+
+For example:
+```bash
+$ curl http://localhost:8080/history?user=58158
+
+[
+  "@vik/test-redaktora-dlya-botov-ot-vik-11-10", 
+  "@vox-populi/otchyot-kuratora-30-oktyabrya-5-noyabrya", 
+  "@vp-freelance/4kpmi-rezultaty-ezhenedelnogo-konkursa-luchshaya-rabota-po-itogam-nedeli", 
+  "@vp-freelance/khudozhestvennyi-perevod", 
+  "@vp-freelance/konkursnaya-rabota-16-odnazhdy-na-rabote-ikra-belugi", 
+  "@vp-freelance/realnosti-frilansa-mysli", 
+  "@vp-freelance/rezultaty-konkursa-odnazhdy-na-rabote-za-oktyabr-2017-goda", 
+  "@vp-freelance/treiding-kak-vid-frilansa"
 ]
 ```
 
