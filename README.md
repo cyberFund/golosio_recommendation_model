@@ -275,7 +275,7 @@ $ curl http://localhost:8080/history?user=58158
 
 # Configuration
 
-Overall service configuration situated in config.py file inside a package. You can additionally modify 
+Overall service configuration situated in config.py file, but most of the configuration hidden in .py files deep inside a package. You can additionally modify lines below to get better results: 
 
 You can change service port here:
 
@@ -288,7 +288,7 @@ It's highly recommended not to play with the parameters, but you can do it at yo
 ```python
 # sync/convert_comments.py
 ...
-HOURS_LIMIT = 14 * 24 # Time window for events extraction. Bigger values ​makes recommendations 
+HOURS_LIMIT = 14 * 24 # Time window size (in hours) for events extraction. Bigger values makes recommendations less sensitive to changes in preferences
 ...
 # model/train/doc2vec.py
 ...
