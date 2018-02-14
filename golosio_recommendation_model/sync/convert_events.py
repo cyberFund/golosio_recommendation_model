@@ -8,7 +8,7 @@ import sys
 from golosio_recommendation_model.model import utils
 from golosio_recommendation_model.config import config
 
-HOURS_LIMIT = 14 * 24 # Time window for recommended posts
+HOURS_LIMIT = 2 * 24 # Time window for recommended posts
 WORKERS = 13
 
 def get_last_event_date(url, database):

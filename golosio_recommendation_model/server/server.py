@@ -18,12 +18,12 @@ port = 8080 # Use desired port
 
 @app.route('/users')
 def users():
-  return jsonify(events[events["like"] > 0.7]["user_id"].unique().tolist())
+  return jsonify(events[events["like"] >= 0.7]["user_id"].unique().tolist())
 
 @app.route('/history')
 def history():
   user = request.args.get("user")
-  user_events = events[(events["user_id"] == user) & (events["like"] > 0.7)]
+  user_events = events[(events["user_id"] == user) & (events["like"] >= 0.7)]
   return jsonify(user_events["post_permlink"].unique().tolist())
 
 @app.route('/user_id')
