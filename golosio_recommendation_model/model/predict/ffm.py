@@ -42,8 +42,8 @@ def save_recommendations(recommendations, url, database):
   recommendations.to_csv(config['model_path'] + "recommendations.csv")
   client = MongoClient(url)
   db = client[database]
-  db.recommendation.drop()
-  db.recommendation.insert_many(recommendations.to_dict('records'))
+  for index, recommendation in recommendations.iterrows():
+    db.recommendation.update_one({'user_id': recommendation["user_id"], 'post_permlink': recommendation["post_permlink"]}, {'prediction': recommendation['prediction']}, upsert=True)
 
 @utils.error_log("FFM predict")
 def predict_ffm():
