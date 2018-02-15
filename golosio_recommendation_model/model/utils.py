@@ -34,7 +34,7 @@ def get_events(url, database):
       'post_permlink' : 1, 
       'like' : 1, 
     } 
-  ))) 
+  )), columns=["_id", "user_id", "post_permlink", "like"]) 
   return events 
 
 def get_posts(url, database, events, filter_options={}):

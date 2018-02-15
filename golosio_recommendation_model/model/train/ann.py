@@ -122,6 +122,7 @@ def train_ann():
 
   utils.log("ANN train", "Get posts...")
   posts = get_posts(database_url, database_name)
+  posts.to_csv(config['model_path'] + "ann_posts.csv")
   utils.log("ANN train", "Prepare posts...")
   vectors, popular_tags, popular_categorical = prepare_posts(posts)
   utils.log("ANN train", "Prepare model...")
