@@ -6,9 +6,9 @@ config = {
   'model_path': "/tmp/", # Path to model files
   'log_path': "/tmp/recommendation_model.log", # Path to model log
   'events_database': { # Credentials for mysql database with events
-    'host': '',
-    'database': '',
-    'user': '',
-    'password': ''
+    'host': 'localhost',
+    'database': 'golos',
+    'user': 'root',
+    'password': 'root'
   }
 }

@@ -27,15 +27,15 @@ WHERE
       cursor.execute(sql)
       result = cursor.fetchall()
   finally:
+    print(result)
     connection.close()
   return result
     
 def sync_events():
   url = config['database_url']
   database = config['database_name']
-  events_path = config['events_path']
   events_database = config['events_database']
-  utils.log("Sync events", "Get events from a file...")
+  utils.log("Sync events", "Get events from a database...")
   events = get_events(
     events_database['host'], 
     events_database['database'], 
@@ -44,4 +44,5 @@ def sync_events():
   )
   client = MongoClient(url)
   db = client[database]
-  db.raw_event.insert_many(events)
+  if len(events):
+    db.raw_event.insert_many(events)
