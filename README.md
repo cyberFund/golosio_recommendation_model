@@ -37,7 +37,7 @@ This repo contains files of recommendation system for golos.io
    +-- ffm_predict - Daemon that makes FFM predictions and stores them to a database
    +-- recommendations_server - Daemon for a recommendation model server
    +-- sync_comments - Daemon that loads new comments from a golos node to a database
-   +-- sync_events - Daemon that loads events from a specified csv file to a database
+   +-- sync_events - Daemon that loads events from a specified mysql DB to a database
    +-- sync_accounts - Daemon that loads accounts from a specified csv file to a database
 ```
 
