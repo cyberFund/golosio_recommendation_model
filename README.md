@@ -55,17 +55,9 @@ $ scp earth@earth.cyber.fund:~/Documents/golosio-recommendation-model/golosio-re
 $ scp earth@earth.cyber.fund:~/Documents/golosio-recommendation-model/golosio-recommendation-dump-event.json ./
 ```
 
-To load events to a mongo database from mysql database later, use this sql to create csv with new events from some period:
-```sql
-SELECT user_id, event_type, value, refurl, created_at
-FROM golos.web_events 
-WHERE 
-   (event_type = "Comment" OR event_type = "Vote" OR event_type = "PageView") 
-   AND created_at < CURDATE()
-   AND created_at >  CURDATE() - INTERVAL 1 DAY
-INTO OUTFILE 'PATH_TO_CSV'
-FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"';
+To load events to a mongo database from mysql database later, use 
+```bash
+$ sync_events start
 ```
 
 Prepare config file before installation. It should looks like this:
@@ -74,11 +66,16 @@ Prepare config file before installation. It should looks like this:
 config = {
   'database_url': "localhost:27017", # Your mongo database url
   'database_name': "golos_comments", # Mongo database with dumps content
-  'events_path': "/home/anatoli/Documents/golosio_recommendation_model/test_events4.csv", # Path to csv file with events
-  'accounts_path': "/home/anatoli/Documents/golosio_recommendation_model/accounts.csv", # Path to csv file with accounts
+  'accounts_path': "/home/anatoli/Documents/golosio_recommendation_model/accounts.csv", # Path to csv file with accounts, only for debug
   'node_url': 'ws://localhost:8090', # Golos.io websocket url
   'model_path': "/tmp/", # Path to model files
   'log_path': "/tmp/recommendation_model.log", # Path to model log
+  'events_database': { # Credentials for mysql database with events
+    'host': 'localhost',
+    'database': 'golos',
+    'user': 'root',
+    'password': 'root'
+  }
 }
 ```
 
