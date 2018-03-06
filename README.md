@@ -55,11 +55,6 @@ $ scp earth@earth.cyber.fund:~/Documents/golosio-recommendation-model/golosio-re
 $ scp earth@earth.cyber.fund:~/Documents/golosio-recommendation-model/golosio-recommendation-dump-event.json ./
 ```
 
-To load events to a mongo database from mysql database later, use 
-```bash
-$ sync_events start
-```
-
 Prepare config file before installation. It should looks like this:
 ```python
 # golosio_recommendation_model/config.py
