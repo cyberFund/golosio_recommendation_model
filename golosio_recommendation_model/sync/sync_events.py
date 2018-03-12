@@ -4,8 +4,9 @@ import sys
 from golosio_recommendation_model.model import utils
 from golosio_recommendation_model.config import config
 import pymysql
+import datetime as dt
+import pdb
 
-@utils.error_log("Sync events")
 def get_events(events_host, events_database, events_user, events_password, mongo_url, mongo_database):
   result = []
   connection = pymysql.connect(host=events_host,
@@ -22,15 +23,16 @@ FROM golos.web_events
 WHERE 
    (event_type = "Comment" OR event_type = "Vote" OR event_type = "PageView") 
    AND created_at < CURDATE()
-   AND created_at > ?
+   AND created_at > %s
 """
-      cursor.execute(sql, utils.get_last_event_date(mongo_url, mongo_database))
+      date = utils.get_last_event_date(mongo_url, mongo_database)
+      cursor.execute(sql, date.strftime("%Y-%m-%d %H:%M:%S"))
       result = cursor.fetchall()
   finally:
-    print(result)
     connection.close()
-  return result
-    
+  return list(result)
+
+@utils.error_log("Sync events")
 def sync_events():
   url = config['database_url']
   database = config['database_name']

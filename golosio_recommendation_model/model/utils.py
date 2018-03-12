@@ -14,6 +14,7 @@ from functools import wraps
 import pandas as pd
 import os
 from golosio_recommendation_model.config import config
+import datetime as dt
 
 logging.basicConfig(filename=config['log_path'], format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
@@ -80,13 +81,17 @@ def get_last_post_date(url, database):
 def get_last_event_date(url, database):
   client = MongoClient(url)
   db = client[database]
-  last_event = db.raw_event.find(
+  last_events = db.raw_event.find(
     {
     }, {
       'created_at': 1,
     }
-  ).sort([("created_at", DESCENDING)]).limit(1)[0]
-  return last_event['created_at']
+  ).sort([("created_at", DESCENDING)]).limit(1)
+  if last_events.count() > 0:
+    return last_events[0]['created_at']
+  else:
+    # TODO move timedelta to a config
+    return dt.datetime.now() - dt.timedelta(days=60)
 
 def preprocess_posts(posts, include_all_tags=False):
   """
