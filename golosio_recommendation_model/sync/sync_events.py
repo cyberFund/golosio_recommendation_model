@@ -6,7 +6,7 @@ from golosio_recommendation_model.config import config
 import pymysql
 
 @utils.error_log("Sync events")
-def get_events(events_host, events_database, events_user, events_password):
+def get_events(events_host, events_database, events_user, events_password, mongo_url, mongo_database):
   result = []
   connection = pymysql.connect(host=events_host,
                              user=events_user,
@@ -22,9 +22,9 @@ FROM golos.web_events
 WHERE 
    (event_type = "Comment" OR event_type = "Vote" OR event_type = "PageView") 
    AND created_at < CURDATE()
-   AND created_at >  CURDATE() - INTERVAL 1 DAY
+   AND created_at > ?
 """
-      cursor.execute(sql)
+      cursor.execute(sql, utils.get_last_event_date(mongo_url, mongo_database))
       result = cursor.fetchall()
   finally:
     print(result)
@@ -40,7 +40,9 @@ def sync_events():
     events_database['host'], 
     events_database['database'], 
     events_database['user'], 
-    events_database['password']
+    events_database['password'],
+    url,
+    database
   )
   client = MongoClient(url)
   db = client[database]
