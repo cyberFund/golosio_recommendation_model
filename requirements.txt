@@ -16,3 +16,8 @@ lxml
 pymystem3
 daemons
 pymysql
+piston-lib
+flask
+flask_cors
+toolz
+cloudpickle
