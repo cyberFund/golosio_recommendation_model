@@ -12,7 +12,7 @@ RUN git clone https://github.com/alexeygrigorev/libffm-python && cd libffm-pytho
 
 ADD . /opt/recsys/
 
-RUN pip3 install . && python3 -m pip install -r requirements.txt && python3 setup.py install && python3 -m nltk.downloader all
+RUN pip3 install -r requirements.txt && python3 -m nltk.downloader all && pip3 install .
 
 VOLUME [ "/opt/recsys/data" ]
 
