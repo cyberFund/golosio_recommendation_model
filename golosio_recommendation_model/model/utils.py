@@ -15,6 +15,8 @@ import pandas as pd
 import os
 from golosio_recommendation_model.config import config
 import datetime as dt
+import traceback
+
 
 logging.basicConfig(filename=config['log_path'], format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
@@ -178,9 +180,10 @@ def error_log(model):
       except Exception as e:
         log(model, "An exception appeared")
         logging.exception(e)
-        print(e)
+        traceback.print_exc()
       else:
         log(model, "Finished successfully")
+        print("Finished successfully")
     return wrapper
   return error_log_decorator
 
