@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from pistonapi.steemnoderpc import SteemNodeRPC
+from golosio_recommendation_model.stubs import SteemNodeRPC
 from piston.steem import Post
 from pymongo import MongoClient
 from pprint import pprint
@@ -13,7 +13,7 @@ from golosio_recommendation_model.config import config
 # import pistonapi as steemapi
 
 # Golos node params
-rpc = SteemNodeRPC(config['node_url'], apis=["follow", "database"])
+rpc = SteemNodeRPC(config['node_url'])
 # MongoDB params
 mongo = MongoClient(config['database_url'])
 # Database name in MongoDB
