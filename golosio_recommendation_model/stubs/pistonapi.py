@@ -75,3 +75,12 @@ class SteemNodeRPC:
 
   def get_account(self, name):
     pass
+
+  def get_ops_in_block(self, block_number, only_virtual):
+    operations_request = self._create_method_call_request(
+      "database_api",
+      "get_ops_in_block",
+      [block_number, only_virtual]
+    )
+    result = self._send_request(operations_request)['result']
+    return result

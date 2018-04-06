@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from golosio_recommendation_model.stubs import SteemNodeRPC
+from golosio_recommendation_model.stubs.pistonapi import SteemNodeRPC
 from piston.steem import Post
 from pymongo import MongoClient
 from pprint import pprint
@@ -30,7 +30,7 @@ init = db.status.find_one({'_id': 'height'})
 # where you want some data but don't want to sync the entire blockchain.
 # ------------
 
-# last_block = 5298239
+last_block = 5298239
 
 def process_op(opObj, block, blockid):
     opType = opObj[0]
