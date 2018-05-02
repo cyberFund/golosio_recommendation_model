@@ -2,7 +2,7 @@ from pymongo import MongoClient, DESCENDING, ASCENDING
 from golosio_recommendation_model.config import config
 from golos import Steem
 
-STEP_BACKWARD_SIZE = 20
+STEP_BACKWARD_SIZE = 99
 STEP_FORWARD_SIZE = 10
 
 def get_node():
@@ -69,5 +69,35 @@ def do_initial_step():
   posts = node.get_posts(limit=STEP_BACKWARD_SIZE, sort='created') # Sort by created
   save_posts(posts)
 
-def do_step_backward():
-  do_initial_step()
+def do_step_backward(start_post):
+  database = get_database()
+  node = get_node()
+  posts = node.get_posts(limit=STEP_BACKWARD_SIZE + 1, sort='created', start=start_post) 
+  save_posts(posts[1:])
+  return posts[-1].identifier[1:]
+    
+def do_step_forward(newest_consistent_post, start_post):
+  database = get_database()
+  node = get_node()
+  posts = node.get_posts(limit=STEP_FORWARD_SIZE + 1, sort='created', start=start_post) 
+  save_posts(posts[1:])
+  posts_ids = [post.identifier for post in posts]
+  if ("@" + newest_consistent_post) not in posts_ids:
+    return newest_consistent_post, posts[-1].identifier[1:]
+  else:
+    return get_newest_post_as_consistent(), None
+
+# TODO add created index
+def sync_comments(max_iterations=None):
+  if no_posts():
+    do_initial_step()
+  newest_post = None
+  newest_consistent_post = find_newest_consistent_post()
+  oldest_post = find_oldest_post()
+  iterations = 0
+  while True:
+    if max_iterations and (max_iterations <= iterations):
+      break;
+    iterations += 1
+    oldest_post = do_step_backward(oldest_post)
+    newest_consistent_post, newest_post = do_step_forward(newest_consistent_post, newest_post)

@@ -92,46 +92,46 @@ class SyncCommentsTestCase(unittest.TestCase):
     assert number_of_posts_in_database == STEP_BACKWARD_SIZE
 
   def test_step_backward(self):
-    self.database.comment.insert_one({'_id': "hipster/post-dobra", "created": database.now()})
-    last_post = do_step_backward("hipster/post-dobra")
+    last_post = do_step_backward("khorunzha/uznai-o-svoem-potenciale")
     last_post_in_database = self.database.comment.find_one({"_id": last_post})
     number_of_extracted_posts = self.database.comment.count({"created": {
-      "$lt": database.now(), 
       "$gte": last_post_in_database["created"]
     }})
-    assert last_post == ""
+    assert last_post == "sinilga/ya-uzhe-dykhane-beregu"
     assert number_of_extracted_posts == STEP_BACKWARD_SIZE
 
   def test_step_forward(self):
-    self.database.comment.insert_one({'_id': "hipster/post-dobra", "created": database.now()})
-    last_consistent_post, last_post = do_step_forward("hipster/post-dobra", None)
+    last_consistent_post, last_post = do_step_forward("hipster/post-dobra", "sashapoplavskiy/skyfchain-ico")
     last_post_in_database = self.database.comment.find_one({"_id": last_post})
     number_of_extracted_posts = self.database.comment.count({"created": {
       "$gte": last_post_in_database["created"]
     }})
-    assert last_post == ""
-    assert last_consistent_post == ""
+    assert last_post == "markonly/localcoinswap-kyc-teper-ne-nuzhen-ico-live"
+    assert last_consistent_post == "hipster/post-dobra"
     assert number_of_extracted_posts == STEP_FORWARD_SIZE
 
   def test_final_step_forward(self):
-    self.database.comment.insert_one({'_id': "hipster/post-dobra", "created": database.now() - timedelta(2)})
-    self.database.comment.insert_one({'_id': "some/new-post", "created": database.now()})
-    previous_post = ""
-    last_consistent_post, last_post = do_step_forward("hipster/post-dobra", previous_post)
+    self.database.comment.insert_one({'_id': "some/new-post", "created": datetime.now()})
+    previous_post = "sashapoplavskiy/skyfchain-ico"
+    last_consistent_post, last_post = do_step_forward("markonly/localcoinswap-kyc-teper-ne-nuzhen-ico-live", previous_post)
     number_of_posts = self.database.comment.count({})
     newest_post_in_database = self.database.comment.find_one({"_id": "some/new-post"})
-    assert number_of_posts == 3
     assert last_consistent_post == "some/new-post"
     assert not last_post
-    assert newest_post_in_database["consistent"] = True
+    assert newest_post_in_database["consistent"] == True
 
   def test_sync_comments(self):
     do_initial_step()
     oldest_post = find_oldest_post()
     oldest_post_in_database = self.database.comment.find_one({"_id": oldest_post})
-    self.database.comment.delete({"_id": {"$not": oldest_post}})
-    sync_comments(iterations=1)
-    number_of_newest_posts = self.database.comment.count({"created": {"gt": oldest_post_in_database["created"]}})
-    number_of_oldest_posts = self.database.comment.count({"created": {"lt": oldest_post_in_database["created"]}})
-    assert number_of_newest_posts == STEP_FORWARD_SIZE - 1
+    self.database.comment.remove({"_id": {"$ne": oldest_post}})
+    sync_comments(max_iterations=1)
+    number_of_newest_posts = self.database.comment.count({"created": {"$gt": oldest_post_in_database["created"]}})
+    number_of_oldest_posts = self.database.comment.count({"created": {"$lt": oldest_post_in_database["created"]}})
     assert number_of_oldest_posts == STEP_BACKWARD_SIZE
+    assert number_of_newest_posts == STEP_FORWARD_SIZE
+
+  def test_initial_sync_comments(self):
+    sync_comments(max_iterations=0)
+    number_of_posts = self.database.comment.count({})
+    assert number_of_posts == STEP_BACKWARD_SIZE
