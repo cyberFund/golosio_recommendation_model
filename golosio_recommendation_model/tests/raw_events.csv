@@ -1,5 +1,0 @@
-id,event_type,value,user_id,refurl,status,created_at
-0,PageView,"[-author/somelink1-,-author/somelink2-,-author/somelink3-]",1,https://golos.io/someurl,404,2017-11-09 00:00:11
-1,PageView,[],1,https://golos.io/permlink/@author/somelink1,404,2017-11-09 00:00:11
-2,Vote,@author/somelink2,1,https://golos.io/permlink/@author/somelink2,404,2017-11-09 00:00:11
-3,Comment,,1,https://golos.io/permlink/@author/somelink2,404,2017-11-09 00:00:11

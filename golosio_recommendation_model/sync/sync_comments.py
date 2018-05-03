@@ -1,182 +1,109 @@
-from datetime import datetime, timedelta
-from pistonapi.steemnoderpc import SteemNodeRPC
-from piston.steem import Post
-from pymongo import MongoClient
-from pprint import pprint
-import collections
-import json
-import time
-import sys
-import os
-from tqdm import tqdm
+from pymongo import MongoClient, DESCENDING, ASCENDING
 from golosio_recommendation_model.config import config
-# import pistonapi as steemapi
+from golos import Steem
 
-# Golos node params
-rpc = SteemNodeRPC(config['node_url'], apis=["follow", "database"])
-# MongoDB params
-mongo = MongoClient(config['database_url'])
-# Database name in MongoDB
-db = mongo[config['database_name']]
+STEP_BACKWARD_SIZE = 99
+STEP_FORWARD_SIZE = 10
 
-# Calculated last block
-init = db.status.find_one({'_id': 'height'})
-# ------------
-# For development:
-#
-# If you're looking for a faster way to sync the data and get started,
-# uncomment this line with a more recent block, and the chain will start
-# to sync from that point onwards. Great for a development environment
-# where you want some data but don't want to sync the entire blockchain.
-# ------------
+def get_node():
+  return Steem([config["node_url"]])
 
-# last_block = 5298239
+def get_database():
+  client = MongoClient(config["database_url"])
+  database = client[config["database_name"]]
+  return database
+  
+def no_posts():
+  database = get_database()
+  return database.comment.count() == 0
 
-def process_op(opObj, block, blockid):
-    opType = opObj[0]
-    op = opObj[1]
-    if opType == "comment":
-        # Update the comment
-        update_comment(op['author'], op['permlink'])
-    if opType == "vote":
-        # Update the comment and vote
-        update_comment(op['author'], op['permlink'])
-    if opType == "author_reward":
-        update_comment(op['author'], op['permlink'])
+def find_newest_post():
+  database = get_database()
+  newest_posts = database.comment.find({}, {"_id": True}).sort([("created", DESCENDING)])
+  return newest_posts[0]["_id"]
 
-def save_block(block, blockid):
-    doc = block.copy()
-    doc.update({
-        '_id': blockid,
-        '_ts': datetime.strptime(doc['timestamp'], "%Y-%m-%dT%H:%M:%S"),
-    })
-    db.block.update({'_id': blockid}, doc, upsert=True)
-#    db.block_30d.update({'_id': blockid}, doc, upsert=True)
+def find_oldest_post():
+  database = get_database()
+  oldest_posts = database.comment.find({}, {"_id": True}).sort([("created", ASCENDING)])
+  return oldest_posts[0]["_id"]
 
+def get_newest_post_as_consistent():
+  database = get_database()
+  newest_post = find_newest_post()
+  database.comment.update({"_id": newest_post}, {"$set": {"consistent": True}})
+  return newest_post
 
-def process_block(block, blockid):
-    save_block(block, blockid)
-    ops = rpc.get_ops_in_block(blockid, False)
-    for tx in block['transactions']:
-      for opObj in tx['operations']:
-        process_op(opObj, block, blockid)
-    for opObj in ops:
-      process_op(opObj['op'], block, blockid)
+def find_newest_consistent_post():
+  database = get_database()
+  newest_consistent_posts = database.comment.find({"consistent": True}, {"_id": True}).sort([("created", ASCENDING)])
+  if newest_consistent_posts.count() > 0:
+    return newest_consistent_posts[0]["_id"]
+  else:
+    return get_newest_post_as_consistent()
 
-#    queue_update_account(witness_vote['account'])
-#    if witness_vote['account'] != witness_vote['witness']:
-#        queue_update_account(witness_vote['witness'])
+def save_posts(posts):
+  database = get_database()
+  posts_for_database = [{
+    "_id": post.identifier[1:],
+    "permlink": post.permlink,
+    "author": post.author,
+    "parent_permlink": post.parent_permlink,
+    "created": post.created,
+    "json_metadata": post.json_metadata,
+    "body": post.body,
+    "depth": 0
+  } for post in posts]
+  posts_in_database = database.comment.find({
+    '_id' : {
+      '$in' : [post["_id"] for post in posts_for_database]
+    }
+  })
+  posts_in_database = set(post["_id"] for post in posts_in_database)
+  filtered_posts_for_database = [post for post in posts_for_database if post["_id"] not in posts_in_database]
+  if len(filtered_posts_for_database):
+    database.comment.insert(filtered_posts_for_database)
 
+def set_index():
+  database = get_database()
+  database.comment.create_index([("created", DESCENDING)])
 
-def update_comment(author, permlink):
-    _id = author + '/' + permlink
-    comment = rpc.get_content(author, permlink).copy()
-    comment.update({
-        '_id': _id,
-    })
+def do_initial_step():
+  database = get_database()
+  node = get_node()
+  posts = node.get_posts(limit=STEP_BACKWARD_SIZE, sort='created') # Sort by created
+  save_posts(posts)
 
-    # fix all values on active votes
-    active_votes = []
-    for vote in comment['active_votes']:
-        vote['rshares'] = float(vote['rshares'])
-        vote['weight'] = float(vote['weight'])
-        vote['time'] = datetime.strptime(vote['time'], "%Y-%m-%dT%H:%M:%S")
-        active_votes.append(vote)
-    comment['active_votes'] = active_votes
+def do_step_backward(start_post):
+  database = get_database()
+  node = get_node()
+  posts = node.get_posts(limit=STEP_BACKWARD_SIZE + 1, sort='created', start=start_post) 
+  save_posts(posts[1:])
+  return posts[-1].identifier[1:]
+    
+def do_step_forward(newest_consistent_post, start_post):
+  database = get_database()
+  node = get_node()
+  posts = node.get_posts(limit=STEP_FORWARD_SIZE + 1, sort='created', start=start_post) 
+  save_posts(posts[1:])
+  posts_ids = [post.identifier for post in posts]
+  if ("@" + newest_consistent_post) not in posts_ids:
+    return newest_consistent_post, posts[-1].identifier[1:]
+  else:
+    return get_newest_post_as_consistent(), None
 
-    for key in ['author_reputation', 'net_rshares', 'children_abs_rshares', 'abs_rshares', 'children_rshares2', 'vote_rshares']:
-        comment[key] = float(comment[key])
-    for key in ['total_pending_payout_value', 'pending_payout_value', 'max_accepted_payout', 'total_payout_value', 'curator_payout_value']:
-        comment[key] = float(comment[key].split()[0])
-    for key in ['active', 'created', 'cashout_time', 'last_payout', 'last_update', 'max_cashout_time']:
-        comment[key] = datetime.strptime(comment[key], "%Y-%m-%dT%H:%M:%S")
-    for key in ['json_metadata']:
-        try:
-          comment[key] = json.loads(comment[key])
-        except ValueError:
-          comment[key] = comment[key]
-
-    comment['scanned'] = datetime.now()
-    results = db.comment.update({'_id': _id}, {'$set': comment}, upsert=True)
-
-    if comment['depth'] > 0 and not results['updatedExisting'] and comment['url'] != '':
-        url = comment['url'].split('#')[0]
-        parts = url.split('/')
-        original_id = parts[2].replace('@', '') + '/' + parts[3]
-        db.comment.update(
-            {
-                '_id': original_id
-            },
-            {
-                '$set': {
-                    'last_reply': comment['created'],
-                    'last_reply_by': comment['author']
-                }
-            }
-        )
-
-def sync_comments():
-    # Let's find out how often blocks are generated!
-    config = rpc.get_config()
-    block_interval = config["STEEMIT_BLOCK_INTERVAL"]
-    last_block = 1
-    if (init):
-        last_block = init['value']
-    # We are going to loop indefinitely
-    while True:
-
-        # # -- Process Queue
-        # queue_length = 100
-        # # Don't update automatically if it's older than 3 days (let it update when votes occur)
-        # max_date = datetime.now() + timedelta(-3)
-        # # Don't update if it's been scanned within the six hours
-        # scan_ignore = datetime.now() - timedelta(hours=6)
-        #
-        # # -- Process Queue - Find 100 previous comments to update
-        # queue = db.comment.find({
-        #     'created': {'$gt': max_date},
-        #     'scanned': {'$lt': scan_ignore},
-        # }).sort([('scanned', 1)]).limit(queue_length)
-        # pprint("[Queue] Comments - " + str(queue_length) + " of " + str(queue.count()))
-        # for item in queue:
-        #     update_comment(item['author'], item['permlink'])
-        #
-        # # -- Process Queue - Find 100 comments that have past the last payout and need an update
-        # queue = db.comment.find({
-        #     'cashout_time': {
-        #       '$lt': datetime.now()
-        #     },
-        #     'mode': {
-        #       '$in': ['first_payout', 'second_payout']
-        #     },
-        #     'depth': 0,
-        #     'pending_payout_value': {
-        #       '$gt': 0
-        #     }
-        # }).limit(queue_length)
-        # pprint("[Queue] Past Payouts - " + str(queue_length) + " of " + str(queue.count()))
-        # for item in tqdm(queue, total=queue_length):
-        #     update_comment(item['author'], item['permlink'])
-
-        # Process New Blocks
-        props = rpc.get_dynamic_global_properties()
-        block_number = props['last_irreversible_block_num']
-        while (block_number - last_block) > 0:
-            last_block += 1
-            # Get full block
-            block = rpc.get_block(last_block)
-            # Process block
-            process_block(block, last_block)
-            # Update our block height
-            db.status.update({'_id': 'height'}, {"$set" : {'value': last_block}}, upsert=True)
-            if last_block % 100 == 0:
-                pprint("Processed up to Block #" + str(last_block))
-
-        sys.stdout.flush()
-
-        # Sleep for one block
-        time.sleep(block_interval)
-
-
-if __name__ == '__main__':
-    sync_comments()
+# TODO add created index
+def sync_comments(max_iterations=None):
+  set_index()
+  if no_posts():
+    do_initial_step()
+  newest_post = None
+  newest_consistent_post = find_newest_consistent_post()
+  oldest_post = find_oldest_post()
+  iterations = 0
+  while True:
+    print("Synchronization... Newest post: {}, oldest post: {}".format(newest_post, oldest_post))
+    if (max_iterations is not None) and (max_iterations <= iterations):
+      break;
+    iterations += 1
+    oldest_post = do_step_backward(oldest_post)
+    newest_consistent_post, newest_post = do_step_forward(newest_consistent_post, newest_post)
