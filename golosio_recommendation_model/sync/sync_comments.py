@@ -63,6 +63,10 @@ def save_posts(posts):
   if len(filtered_posts_for_database):
     database.comment.insert(filtered_posts_for_database)
 
+def set_index():
+  database = get_database()
+  database.comment.create_index([("created", DESCENDING)])
+
 def do_initial_step():
   database = get_database()
   node = get_node()
@@ -89,6 +93,7 @@ def do_step_forward(newest_consistent_post, start_post):
 
 # TODO add created index
 def sync_comments(max_iterations=None):
+  set_index()
   if no_posts():
     do_initial_step()
   newest_post = None
@@ -96,7 +101,8 @@ def sync_comments(max_iterations=None):
   oldest_post = find_oldest_post()
   iterations = 0
   while True:
-    if max_iterations and (max_iterations <= iterations):
+    print("Synchronization... Newest post: {}, oldest post: {}".format(newest_post, oldest_post))
+    if (max_iterations is not None) and (max_iterations <= iterations):
       break;
     iterations += 1
     oldest_post = do_step_backward(oldest_post)

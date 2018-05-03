@@ -84,6 +84,12 @@ class SyncCommentsTestCase(unittest.TestCase):
     number_of_posts_in_database = self.database.comment.count({})
     assert number_of_posts_in_database == len(posts)
 
+  def test_set_index(self):
+    set_index()
+    indices = self.database.comment.index_information()
+    indices = [value["key"][0] for key, value in indices.items()]
+    assert ("created", DESCENDING) in indices
+
   def test_initial_step(self):
     do_initial_step()
     number_of_posts_in_database = self.database.comment.count({})
@@ -134,4 +140,7 @@ class SyncCommentsTestCase(unittest.TestCase):
   def test_initial_sync_comments(self):
     sync_comments(max_iterations=0)
     number_of_posts = self.database.comment.count({})
+    indices = self.database.comment.index_information()
+    indices = [value["key"][0] for key, value in indices.items()]
     assert number_of_posts == STEP_BACKWARD_SIZE
+    assert ("created", DESCENDING) in indices
